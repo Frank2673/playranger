@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "playranger"
-version = "0.2.0"
-description = "AI 原生游戏自动化测试 Agent — 双引擎 + 三层自修正，部署在单台 DGX Spark 上"
+version = "0.3.0"
+description = "AI 原生游戏自动化测试 Agent — 双引擎 + 三层自修正，多端适配（Web/WebGL/Android/Windows/Linux/iOS）"
 readme = "README.md"
 requires-python = ">=3.10"
 license = { text = "MIT" }

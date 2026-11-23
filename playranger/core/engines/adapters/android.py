@@ -382,15 +382,4 @@ class AndroidAdapter(NativeAdapterBase):
         return path
 
 
-def _read_binary(cmd: list[str]) -> bytes:
-    """已废弃：保留仅为兼容旧调用，新代码请用 run_command(binary=True)。"""
-    import subprocess
-
-    try:
-        proc = subprocess.run(cmd, capture_output=True, timeout=25, check=False)
-        return proc.stdout if proc.returncode == 0 else b""
-    except Exception:
-        return b""
-
-
 __all__ = ["AndroidAdapter"]

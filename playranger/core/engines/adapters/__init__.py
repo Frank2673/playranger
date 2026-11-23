@@ -90,6 +90,36 @@ def get_adapter(kind: str, **kwargs: Any) -> EngineAdapter:
     )
 
 
+def _browser_binary_hint() -> str | None:
+    """粗查 Chromium 二进制是否存在，避免「装了 playwright 但没装浏览器」被误报为可用。"""
+    import glob
+    import os
+    import sys
+
+    explicit = os.environ.get("PLAYWRIGHT_CHROMIUM_PATH")
+    if explicit:
+        return explicit if os.path.exists(explicit) else None
+
+    candidates: list[str] = []
+    if os.environ.get("PLAYWRIGHT_BROWSERS_PATH"):
+        candidates.append(os.environ["PLAYWRIGHT_BROWSERS_PATH"])
+    if sys.platform == "win32":
+        local = os.environ.get("LOCALAPPDATA")
+        if local:
+            candidates.append(os.path.join(local, "ms-playwright"))
+    else:
+        candidates.append(os.path.expanduser("~/.cache/ms-playwright"))
+
+    for root in candidates:
+        if not os.path.isdir(root):
+            continue
+        for pattern in ("chromium-*", "chromium_headless_shell-*"):
+            hits = glob.glob(os.path.join(root, pattern))
+            if hits:
+                return hits[0]
+    return None
+
+
 def probe_all() -> dict[str, dict]:
     """探测所有适配器的可用性，返回能力矩阵。
 
@@ -98,16 +128,23 @@ def probe_all() -> dict[str, dict]:
     """
     matrix: dict[str, dict] = {}
 
-    # web：只需检查 playwright 是否安装，不启动浏览器
+    # web：检查 playwright 模块 + 浏览器二进制
     try:
         import playwright  # noqa: F401
 
+        binary = _browser_binary_hint()
         matrix["web"] = {
             "available": True,
             "adapter": "web",
             "platform": "web",
+            "browser_binary": binary,
             "reason": None,
-            "note": "Playwright 已安装；WebGL/Canvas 通过 detect_web_render_mode 判定",
+            "warning": None if binary else (
+                "已装 playwright 模块，但未找到 Chromium 二进制；"
+                "请执行 `playwright install chromium`，"
+                "或设置 PLAYWRIGHT_CHROMIUM_PATH 复用本机 Edge/Chrome"
+            ),
+            "note": "WebGL/Canvas 通过 detect_web_render_mode 判定是否需要视觉断言",
         }
     except ImportError:
         matrix["web"] = {
