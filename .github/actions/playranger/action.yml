@@ -1,0 +1,93 @@
+name: PlayRanger
+description: 零脚本试玩测试，产出缺陷包、JUnit、SARIF 与 HTML 报告
+
+inputs:
+  game-url:
+    description: 游戏页面 URL
+    required: true
+  goal:
+    description: 测试目标
+    required: false
+    default: 找到所有可复现的缺陷
+  max-steps:
+    description: 最大步数
+    required: false
+    default: "50"
+  fail-on:
+    description: 触发门禁的严重度（逗号分隔）
+    required: false
+    default: blocker,critical
+  allow:
+    description: 允许的 fail-on 缺陷数量
+    required: false
+    default: "0"
+  python-version:
+    description: Python 版本
+    required: false
+    default: "3.11"
+
+outputs:
+  report-path:
+    description: HTML 报告路径
+    value: ${{ steps.report.outputs.path }}
+  bug-count:
+    description: 缺陷数量
+    value: ${{ steps.ci.outputs.bug_count }}
+
+runs:
+  using: composite
+  steps:
+    - name: Setup Python
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ inputs.python-version }}
+
+    - name: Install PlayRanger
+      shell: bash
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install playwright
+        python -m playwright install chromium --with-deps
+
+    - name: Run PlayRanger
+      id: run
+      shell: bash
+      env:
+        PLAYRANGER_CI: "1"
+      run: |
+        set -o pipefail
+        playranger test "${{ inputs.game-url }}" \
+          --goal "${{ inputs.goal }}" \
+          --max-steps "${{ inputs.max-steps }}" \
+          --ci --perf \
+          --output output/ci-run || true
+
+    - name: Build CI artifacts (JUnit / SARIF / Markdown)
+      id: ci
+      shell: bash
+      run: |
+        python tools/ci_report.py \
+          --bugs output/ci-run/bugs \
+          --out-dir output/ci \
+          --fail-on "${{ inputs.fail-on }}" \
+          --allow "${{ inputs.allow }}"
+        echo "bug_count=$(ls output/ci-run/bugs 2>/dev/null | wc -l)" >> "$GITHUB_OUTPUT"
+
+    - name: Build HTML report
+      id: report
+      if: always()
+      shell: bash
+      run: |
+        python tools/build_report.py --bugs output/ci-run/bugs --output output/ci/report.html || true
+        echo "path=output/ci/report.html" >> "$GITHUB_OUTPUT"
+
+    - name: Upload artifacts
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: playranger-report
+        path: |
+          output/ci/
+          output/ci-run/bugs/
+        if-no-files-found: warn

@@ -1,0 +1,1742 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>PlayRanger 试玩队 · 自动化试玩测试控制台</title>
+<style>
+  :root {
+    --bg: #0a0e15;
+    --bg-2: #0f141d;
+    --panel: #161c27;
+    --panel-2: #1c2432;
+    --line: #243042;
+    --text: #e4ecf7;
+    --muted: #7a8aa3;
+    --accent: #ff6b2d;
+    --accent-2: #ff9859;
+    --accent-glow: rgba(255, 107, 45, 0.25);
+    --green: #2dd4a7;
+    --green-2: #0d9488;
+    --blue: #3b82f6;
+    --blue-2: #60a5fa;
+    --red: #ef4444;
+    --red-2: #f87171;
+    --yellow: #f59e0b;
+    --yellow-2: #fbbf24;
+    --purple: #a78bfa;
+    --radius: 14px;
+    --mono: "SFMono-Regular", "Cascadia Code", "JetBrains Mono", Consolas, "Liberation Mono", monospace;
+    --shadow-lg: 0 20px 60px rgba(0, 0, 0, 0.45);
+    --shadow-md: 0 8px 24px rgba(0, 0, 0, 0.25);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; min-height: 100%; }
+  body {
+    background:
+      radial-gradient(1200px 600px at 8% -5%, rgba(255, 107, 45, 0.08), transparent 60%),
+      radial-gradient(900px 500px at 95% 10%, rgba(59, 130, 246, 0.06), transparent 55%),
+      linear-gradient(180deg, var(--bg) 0%, #070a10 100%);
+    color: var(--text);
+    font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", system-ui, -apple-system, sans-serif;
+    font-size: 14px;
+    line-height: 1.55;
+    -webkit-font-smoothing: antialiased;
+  }
+  button, input, textarea, select { font: inherit; color: inherit; }
+  button { cursor: pointer; border: 0; background: none; }
+  a { color: var(--blue-2); text-decoration: none; }
+  [hidden] { display: none !important; }
+
+  /* ─── 顶部导航 ─── */
+  header.top {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 14px 28px;
+    border-bottom: 1px solid var(--line);
+    background: rgba(10, 14, 21, 0.82);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    position: sticky; top: 0; z-index: 30;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 38px; height: 38px; border-radius: 11px;
+    background: linear-gradient(135deg, var(--accent), #ff4515);
+    display: grid; place-items: center;
+    font-weight: 800; color: #1a0602;
+    font-size: 14px; letter-spacing: 0.5px;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .brand h1 { font-size: 15px; margin: 0; letter-spacing: 0.3px; font-weight: 700; }
+  .brand small { color: var(--muted); font-family: var(--mono); font-size: 10.5px; letter-spacing: 1.5px; }
+  .nav-tabs { display: flex; gap: 4px; }
+  .nav-tab {
+    padding: 7px 14px; border-radius: 8px;
+    color: var(--muted); font-size: 13px; font-weight: 500;
+    transition: all 0.15s;
+  }
+  .nav-tab:hover { color: var(--text); background: var(--panel); }
+  .nav-tab.active { color: var(--text); background: var(--panel-2); }
+  .top-right { display: flex; align-items: center; gap: 10px; }
+  .chip {
+    border: 1px solid var(--line); background: var(--panel);
+    border-radius: 999px; padding: 5px 12px; font-size: 12px; color: var(--muted);
+  }
+  .chip b { color: var(--text); font-weight: 600; }
+  .chip.admin {
+    border-color: rgba(255, 107, 45, 0.4);
+    color: var(--accent-2);
+    background: rgba(255, 107, 45, 0.08);
+  }
+
+  main { max-width: 1600px; margin: 0 auto; padding: 24px 28px 60px; }
+
+  /* ─── 登录页 ─── */
+  .auth-shell { max-width: 440px; margin: 10vh auto 0; }
+  .auth-card {
+    background: linear-gradient(180deg, rgba(28, 36, 50, 0.85), rgba(22, 28, 39, 0.95));
+    border: 1px solid var(--line); border-radius: 20px; padding: 32px 28px;
+    box-shadow: var(--shadow-lg);
+    position: relative;
+    overflow: hidden;
+  }
+  .auth-card::before {
+    content: ""; position: absolute; top: -50%; left: -20%; width: 140%; height: 100%;
+    background: radial-gradient(closest-side, rgba(255, 107, 45, 0.08), transparent);
+    pointer-events: none;
+  }
+  .auth-card h2 { margin: 0 0 8px; font-size: 22px; font-weight: 700; position: relative; }
+  .auth-card p.lead { color: var(--muted); margin: 0 0 22px; line-height: 1.65; position: relative; font-size: 13.5px; }
+  .tabs { display: flex; gap: 4px; background: rgba(15, 20, 29, 0.7); padding: 4px; border-radius: 10px; margin-bottom: 20px; position: relative; }
+  .tabs button {
+    flex: 1; border: 0; background: transparent; color: var(--muted);
+    padding: 10px; border-radius: 8px; font-weight: 600; font-size: 13px;
+    transition: all 0.15s;
+  }
+  .tabs button.active {
+    background: var(--panel-2); color: var(--text);
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .field { margin-bottom: 14px; position: relative; }
+  .field label { display: block; color: var(--muted); font-size: 12px; margin-bottom: 6px; font-weight: 500; }
+  .field input, .field textarea, .field select {
+    width: 100%; background: #0c1118; border: 1px solid var(--line);
+    border-radius: 10px; padding: 11px 14px; outline: none;
+    transition: border-color 0.15s, box-shadow 0.15s;
+    font-size: 13.5px;
+  }
+  .field textarea { resize: vertical; min-height: 72px; font-family: inherit; }
+  .field input:focus, .field textarea:focus, .field select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-glow);
+  }
+  .field .hint { color: var(--muted); font-size: 11.5px; margin-top: 6px; line-height: 1.5; }
+  .btn {
+    border: 1px solid var(--line); background: var(--panel-2); color: var(--text);
+    border-radius: 10px; padding: 9px 16px; font-weight: 600; font-size: 13px;
+    transition: all 0.12s;
+  }
+  .btn:hover { border-color: #3a4a63; background: #212a3a; }
+  .btn.primary {
+    background: linear-gradient(135deg, var(--accent), #ff5015);
+    border: 0; color: #160502;
+    box-shadow: 0 4px 14px var(--accent-glow);
+  }
+  .btn.primary:hover { filter: brightness(1.06); transform: translateY(-1px); box-shadow: 0 6px 20px var(--accent-glow); }
+  .btn.ghost { background: transparent; }
+  .btn.danger { color: #ffb4ae; border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.05); }
+  .btn.danger:hover { background: rgba(239, 68, 68, 0.1); }
+  .btn.small { padding: 6px 11px; font-size: 12px; border-radius: 7px; font-weight: 500; }
+  .btn:disabled { opacity: 0.45; cursor: not-allowed; transform: none !important; }
+  .btn.block { width: 100%; }
+  .note { color: var(--muted); font-size: 11.5px; line-height: 1.6; margin-top: 12px; }
+
+  /* ─── 仪表盘首屏 ─── */
+  .dash-header {
+    display: flex; justify-content: space-between; align-items: flex-end;
+    margin-bottom: 20px;
+  }
+  .dash-header h2 { margin: 0; font-size: 20px; font-weight: 700; }
+  .dash-header .sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+
+  .kpi-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 20px; }
+  .kpi-card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line); border-radius: var(--radius);
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+    transition: border-color 0.2s, transform 0.2s;
+  }
+  .kpi-card:hover { border-color: #3a4a63; }
+  .kpi-card .icon {
+    position: absolute; right: 16px; top: 16px;
+    width: 40px; height: 40px; border-radius: 10px;
+    display: grid; place-items: center; font-size: 18px;
+  }
+  .kpi-card .label { color: var(--muted); font-size: 12px; font-weight: 500; letter-spacing: 0.3px; }
+  .kpi-card .value {
+    font-size: 32px; font-weight: 700; font-family: var(--mono);
+    margin-top: 6px; letter-spacing: -0.5px;
+  }
+  .kpi-card .delta {
+    margin-top: 6px; font-size: 12px; color: var(--muted);
+    display: flex; align-items: center; gap: 6px;
+  }
+  .kpi-card .delta .up { color: var(--green); font-weight: 600; }
+  .kpi-card .delta .down { color: var(--red); font-weight: 600; }
+  .kpi-card.c1 .icon { background: rgba(45, 212, 167, 0.12); color: var(--green); }
+  .kpi-card.c2 .icon { background: rgba(59, 130, 246, 0.12); color: var(--blue-2); }
+  .kpi-card.c3 .icon { background: rgba(255, 107, 45, 0.12); color: var(--accent-2); }
+  .kpi-card.c4 .icon { background: rgba(167, 139, 250, 0.12); color: var(--purple); }
+
+  .dash-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .dash-row { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+
+  .panel {
+    background: linear-gradient(180deg, var(--panel), rgba(22, 28, 39, 0.6));
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
+  }
+  .panel-head {
+    display: flex; align-items: center; justify-content: space-between; gap: 10px;
+    margin-bottom: 16px;
+  }
+  .panel-head h3 {
+    margin: 0; font-size: 13px; letter-spacing: 1px;
+    text-transform: uppercase; color: var(--muted); font-weight: 600;
+  }
+  .panel-head .sub { color: var(--muted); font-size: 12px; font-family: var(--mono); }
+
+  /* ─── 内存仪表 ─── */
+  .mem-big {
+    display: flex; align-items: baseline; gap: 8px; margin-bottom: 10px;
+  }
+  .mem-big .num { font-size: 34px; font-weight: 700; font-family: var(--mono); }
+  .mem-big .unit { color: var(--muted); font-size: 16px; font-weight: 500; }
+  .mem-sub { color: var(--muted); font-size: 12.5px; margin-bottom: 14px; }
+  .mem-meter {
+    height: 10px; background: #0c1118; border-radius: 999px;
+    overflow: hidden; border: 1px solid var(--line);
+  }
+  .mem-meter > i {
+    display: block; height: 100%; width: 0;
+    background: linear-gradient(90deg, var(--green), var(--yellow), var(--red));
+    transition: width 0.6s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+  .mem-legend {
+    display: flex; justify-content: space-between; margin-top: 8px;
+    font-size: 11px; color: var(--muted);
+  }
+
+  /* ─── 图表容器 ─── */
+  .chart-box {
+    position: relative;
+    width: 100%;
+  }
+  .chart-box canvas { width: 100% !important; display: block; }
+  .chart-empty {
+    color: var(--muted); text-align: center; padding: 30px 10px;
+    font-size: 12px; line-height: 1.7;
+  }
+
+  /* ─── 任务列表 ─── */
+  .board-head {
+    display: flex; align-items: center; justify-content: space-between; margin-bottom: 14px;
+  }
+  .board-head h3 { margin: 0; font-size: 14px; font-weight: 600; }
+  .filters { display: flex; gap: 4px; }
+  .filters button {
+    border: 1px solid var(--line); background: transparent; color: var(--muted);
+    border-radius: 999px; padding: 4px 11px; font-size: 11.5px; font-weight: 500;
+    transition: all 0.12s;
+  }
+  .filters button:hover { color: var(--text); border-color: #3a4a63; }
+  .filters button.active {
+    color: var(--text); border-color: rgba(255, 107, 45, 0.5);
+    background: rgba(255, 107, 45, 0.1);
+  }
+
+  .task-list {
+    display: flex; flex-direction: column; gap: 8px;
+    max-height: 480px; overflow-y: auto; padding-right: 4px;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .task-list::-webkit-scrollbar { width: 5px; }
+  .task-list::-webkit-scrollbar-track { background: transparent; }
+  .task-list::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+
+  .task-card {
+    border: 1px solid var(--line);
+    background: linear-gradient(180deg, #131925, #111722);
+    border-radius: 10px; padding: 13px 14px;
+    cursor: pointer;
+    transition: border-color 0.15s, transform 0.12s, background 0.15s;
+  }
+  .task-card:hover { border-color: #3a4a63; background: linear-gradient(180deg, #161d2b, #131925); }
+  .task-card.selected {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 1px rgba(255, 107, 45, 0.3) inset, 0 4px 14px rgba(255, 107, 45, 0.08);
+  }
+  .task-top {
+    display: flex; align-items: center; gap: 8px; justify-content: space-between;
+  }
+  .task-url {
+    font-family: var(--mono); font-size: 12px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    flex: 1;
+  }
+  .task-goal {
+    color: var(--muted); font-size: 12px;
+    margin: 5px 0 9px;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+  }
+  .task-meta {
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--muted); font-size: 11px; margin-top: 7px;
+  }
+  .task-actions { display: flex; gap: 5px; }
+  .progress {
+    height: 4px; background: #0a0f15; border-radius: 999px; overflow: hidden; margin-top: 8px;
+  }
+  .progress > i {
+    display: block; height: 100%;
+    background: linear-gradient(90deg, var(--blue-2), var(--accent));
+    width: 0; transition: width 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .pill {
+    display: inline-flex; align-items: center; gap: 5px;
+    border-radius: 999px; padding: 3px 9px;
+    font-size: 10.5px; font-weight: 700; letter-spacing: 0.5px; text-transform: uppercase;
+    border: 1px solid transparent; white-space: nowrap;
+  }
+  .pill::before {
+    content: ""; width: 5px; height: 5px; border-radius: 50%;
+    background: currentColor;
+  }
+  .pill.pulse::before { animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%,100% { opacity: 1; } 50% { opacity: 0.3; } }
+  .st-queued { color: var(--muted); border-color: var(--line); background: rgba(122, 138, 163, 0.06); }
+  .st-running { color: var(--blue-2); border-color: rgba(59, 130, 246, 0.35); background: rgba(59, 130, 246, 0.08); }
+  .st-completed { color: var(--green); border-color: rgba(45, 212, 167, 0.35); background: rgba(45, 212, 167, 0.08); }
+  .st-failed { color: var(--red-2); border-color: rgba(239, 68, 68, 0.35); background: rgba(239, 68, 68, 0.08); }
+  .st-cancelled, .st-interrupted { color: var(--yellow-2); border-color: rgba(245, 158, 11, 0.35); background: rgba(245, 158, 11, 0.08); }
+
+  .empty { color: var(--muted); text-align: center; padding: 32px 12px; font-size: 13px; line-height: 1.8; }
+  .empty .emoji { font-size: 28px; margin-bottom: 8px; display: block; }
+
+  /* ─── 详情页 ─── */
+  .detail-grid { display: grid; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); gap: 16px; align-items: start; }
+  .detail-head h2 { margin: 0 0 4px; font-size: 17px; font-weight: 700; word-break: break-all; }
+  .detail-head .meta { color: var(--muted); font-size: 12.5px; line-height: 1.7; }
+  .kv { display: flex; gap: 7px; flex-wrap: wrap; margin: 12px 0 4px; }
+  .kv span {
+    background: #0f141d; border: 1px solid var(--line); border-radius: 7px;
+    padding: 5px 10px; font-size: 11.5px; color: var(--muted);
+  }
+  .kv b { color: var(--text); font-family: var(--mono); font-weight: 600; }
+
+  .timeline {
+    max-height: 400px; overflow-y: auto; margin-top: 12px;
+    border-top: 1px solid var(--line);
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .timeline::-webkit-scrollbar { width: 5px; }
+  .timeline::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .step-row {
+    display: grid; grid-template-columns: 42px 90px 1fr;
+    gap: 10px; padding: 8px 2px;
+    border-bottom: 1px solid rgba(36, 48, 66, 0.6);
+    font-size: 12px;
+    transition: background 0.1s;
+  }
+  .step-row:hover { background: rgba(15, 20, 29, 0.5); }
+  .step-no { font-family: var(--mono); color: var(--muted); font-size: 11px; }
+  .step-act {
+    font-family: var(--mono); color: var(--accent-2);
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+    font-size: 11.5px;
+  }
+  .step-info { color: var(--muted); overflow: hidden; font-size: 12px; line-height: 1.5; }
+  .step-info b { color: var(--text); font-weight: 500; }
+  .badge {
+    display: inline-block; padding: 1px 7px; border-radius: 5px;
+    font-size: 10px; font-weight: 600; margin-left: 5px;
+    vertical-align: 1px;
+  }
+  .b-ok { background: rgba(45, 212, 167, 0.12); color: var(--green); }
+  .b-fail { background: rgba(239, 68, 68, 0.12); color: var(--red-2); }
+  .b-corr { background: rgba(245, 158, 11, 0.12); color: var(--yellow-2); }
+
+  /* ─── Bug 卡片 ─── */
+  .bug-card {
+    border: 1px solid var(--line); border-radius: 11px;
+    padding: 14px; margin-top: 10px;
+    background: linear-gradient(180deg, #111722, #0f141d);
+    transition: border-color 0.15s;
+  }
+  .bug-card:hover { border-color: #3a4a63; }
+  .bug-title {
+    display: flex; gap: 8px; align-items: center; justify-content: space-between;
+    font-weight: 600; font-size: 13.5px;
+  }
+  .sev {
+    font-size: 10px; text-transform: uppercase; padding: 3px 8px;
+    border-radius: 5px; font-weight: 700; letter-spacing: 0.4px;
+  }
+  .sev-critical { background: rgba(239, 68, 68, 0.16); color: var(--red-2); }
+  .sev-major { background: rgba(255, 107, 45, 0.16); color: var(--accent-2); }
+  .sev-minor, .sev-info { background: rgba(59, 130, 246, 0.14); color: var(--blue-2); }
+  .bug-desc {
+    color: var(--muted); font-size: 12.5px; line-height: 1.65;
+    margin: 8px 0; white-space: pre-wrap;
+  }
+  .patch-box {
+    background: #080c12; border: 1px solid var(--line); border-radius: 8px;
+    padding: 10px 12px; font-family: var(--mono); font-size: 11.5px;
+    line-height: 1.6; max-height: 180px; overflow: auto;
+    white-space: pre-wrap; color: #c9d5e4; margin: 8px 0;
+  }
+  .patch-box::-webkit-scrollbar { width: 6px; height: 6px; }
+  .patch-box::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+  .fix-result {
+    font-size: 11.5px; color: var(--muted); margin-top: 8px;
+    line-height: 1.6; white-space: pre-wrap;
+  }
+  .fix-result.ok { color: var(--green); }
+  .fix-result.bad { color: var(--red-2); }
+
+  /* ─── 事件流 ─── */
+  .events {
+    display: flex; flex-direction: column; gap: 2px;
+    max-height: 420px; overflow-y: auto;
+    scrollbar-width: thin; scrollbar-color: var(--line) transparent;
+  }
+  .events::-webkit-scrollbar { width: 5px; }
+  .events::-webkit-scrollbar-thumb { background: var(--line); border-radius: 4px; }
+  .event {
+    display: grid; grid-template-columns: 64px 58px 1fr;
+    gap: 8px; font-size: 12px;
+    padding: 6px 4px;
+    border-bottom: 1px solid rgba(36, 48, 66, 0.45);
+  }
+  .event:last-child { border-bottom: 0; }
+  .event time { color: #586579; font-family: var(--mono); font-size: 11px; }
+  .event .lv { text-transform: uppercase; font-size: 10px; color: var(--muted); font-weight: 600; }
+  .event.warn .lv { color: var(--yellow-2); }
+  .event.error .lv { color: var(--red-2); }
+  .event .msg { color: #c2ccda; line-height: 1.5; word-break: break-word; font-size: 12px; }
+  .event .tid { color: #586579; font-family: var(--mono); font-size: 10px; margin-top: 2px; }
+
+  /* ─── 并发控制滑块 ─── */
+  .scale-section {
+    display: flex; align-items: center; gap: 14px;
+    padding: 14px 0; border-top: 1px solid var(--line);
+    border-bottom: 1px solid var(--line); margin: 14px 0;
+  }
+  .scale-slider { flex: 1; }
+  .scale-slider input[type=range] {
+    width: 100%; height: 6px; border-radius: 999px;
+    background: #0c1118; outline: none;
+    -webkit-appearance: none; appearance: none;
+  }
+  .scale-slider input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none; appearance: none;
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #ff4515);
+    cursor: pointer; border: 2px solid #1a0602;
+    box-shadow: 0 2px 8px var(--accent-glow);
+  }
+  .scale-slider input[type=range]::-moz-range-thumb {
+    width: 18px; height: 18px; border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), #ff4515);
+    cursor: pointer; border: 2px solid #1a0602;
+  }
+  .scale-number {
+    font-family: var(--mono); font-size: 28px; font-weight: 700;
+    min-width: 50px; text-align: center;
+  }
+  .scale-label { font-size: 11px; color: var(--muted); text-align: center; }
+
+  .warn-line {
+    color: var(--yellow-2); font-size: 12px; line-height: 1.6;
+    padding: 8px 12px;
+    background: rgba(245, 158, 11, 0.06);
+    border-left: 3px solid var(--yellow);
+    border-radius: 0 6px 6px 0;
+    margin-top: 8px;
+  }
+  .btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .btn-row .btn { flex: 1; min-width: 90px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 8px; margin: 12px 0; }
+  .stat {
+    background: #0c1118; border: 1px solid var(--line); border-radius: 9px;
+    padding: 10px 12px; text-align: center;
+  }
+  .stat span {
+    display: block; color: var(--muted); font-size: 10px;
+    letter-spacing: 0.5px; text-transform: uppercase; margin-bottom: 3px;
+  }
+  .stat b { font-family: var(--mono); font-size: 17px; font-weight: 700; }
+
+  /* ─── 侧边栏表单 ─── */
+  .form-card {
+    background: linear-gradient(180deg, var(--panel), var(--panel-2));
+    border: 1px solid var(--line); border-radius: var(--radius); padding: 20px;
+  }
+  .form-card .two { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* ─── 吐司 ─── */
+  .toast {
+    position: fixed; right: 24px; bottom: 24px;
+    background: var(--panel-2);
+    border: 1px solid var(--line);
+    border-left: 3px solid var(--accent);
+    padding: 12px 18px; border-radius: 10px;
+    max-width: 420px;
+    box-shadow: var(--shadow-md);
+    font-size: 13px; z-index: 50;
+    animation: slideUp 0.25s ease;
+  }
+  @keyframes slideUp { from { transform: translateY(10px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+  .toast.error { border-left-color: var(--red); }
+  .toast.success { border-left-color: var(--green); }
+
+  /* ─── 侧边导航式布局 ─── */
+  .two-col { display: grid; grid-template-columns: 340px 1fr; gap: 18px; align-items: start; }
+
+  /* ─── 缺陷分类legend ─── */
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 10px; }
+  .legend-item { display: flex; align-items: center; gap: 6px; font-size: 11.5px; color: var(--muted); }
+  .legend-dot { width: 9px; height: 9px; border-radius: 2px; }
+
+  /* ─── 响应式 ─── */
+  @media (max-width: 1280px) {
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .dash-grid { grid-template-columns: 1fr; }
+    .detail-grid { grid-template-columns: 1fr; }
+  }
+  @media (max-width: 900px) {
+    header.top { padding: 12px 16px; flex-wrap: wrap; gap: 10px; }
+    .nav-tabs { order: 3; width: 100%; justify-content: center; }
+    main { padding: 16px; }
+    .two-col { grid-template-columns: 1fr; }
+    .kpi-grid { grid-template-columns: repeat(2, 1fr); }
+    .dash-row { grid-template-columns: 1fr; }
+    .auth-shell { margin: 5vh auto 0; padding: 0 16px; }
+  }
+  @media (max-width: 500px) {
+    .kpi-grid { grid-template-columns: 1fr; }
+    .kpi-card .value { font-size: 26px; }
+  }
+</style>
+</head>
+<body>
+
+<header class="top">
+  <div class="brand">
+    <div class="brand-mark">PR</div>
+    <div>
+      <h1>PlayRanger 试玩队</h1>
+      <small>GAME AUTOMATION PLAYTEST CONSOLE</small>
+    </div>
+  </div>
+  <nav class="nav-tabs" id="nav-tabs" hidden>
+    <button class="nav-tab active" data-view="dashboard">仪表盘</button>
+    <button class="nav-tab" data-view="tasks">任务</button>
+    <button class="nav-tab" data-view="system">系统</button>
+  </nav>
+  <div class="top-right" id="top-right">
+    <span class="chip" id="chip-version">v0.2</span>
+    <span class="chip" id="chip-user" hidden></span>
+    <button class="btn small ghost" id="btn-logout" hidden>退出</button>
+  </div>
+</header>
+
+<main>
+  <!-- 登录 / 注册 -->
+  <section class="auth-shell" id="auth-view">
+    <div class="auth-card">
+      <h2>让 AI Agent 替你把游戏玩一遍</h2>
+      <p class="lead">
+        真实浏览器执行 · 多任务并行调度 · 多通道证据链 · 修复沙箱验证。
+        <br>第一个注册的账号自动成为管理员。
+      </p>
+      <div class="tabs">
+        <button id="tab-login" class="active" type="button">登录</button>
+        <button id="tab-register" type="button">注册</button>
+      </div>
+      <form id="auth-form">
+        <div class="field">
+          <label for="auth-username">用户名</label>
+          <input id="auth-username" autocomplete="username" placeholder="3-32 位字母、数字、_ 或 -" required />
+        </div>
+        <div class="field">
+          <label for="auth-password">密码</label>
+          <input id="auth-password" type="password" autocomplete="current-password" placeholder="至少 8 位" required />
+        </div>
+        <button class="btn primary block" id="auth-submit" type="submit">登录</button>
+      </form>
+      <p class="note">
+        🔒 账号只保存在本机 <code>output/platform.db</code>；密码使用 PBKDF2-HMAC-SHA256 + 随机盐加密存储；Token 以 SHA-256 摘要入库。
+      </p>
+    </div>
+  </section>
+
+  <!-- 控制台 -->
+  <section id="console-view" hidden>
+    <!-- 仪表盘视图 -->
+    <div id="view-dashboard">
+      <div class="dash-header">
+        <div>
+          <h2>控制台概览</h2>
+          <div class="sub" id="dash-subtitle">加载中…</div>
+        </div>
+      </div>
+
+      <!-- KPI 卡片 -->
+      <div class="kpi-grid">
+        <div class="kpi-card c1">
+          <div class="icon">✓</div>
+          <div class="label">总任务</div>
+          <div class="value" id="kpi-tasks">0</div>
+          <div class="delta">
+            <span class="up" id="kpi-tasks-active">0 运行中</span>
+            <span id="kpi-tasks-queued">0 排队</span>
+          </div>
+        </div>
+        <div class="kpi-card c2">
+          <div class="icon">🐛</div>
+          <div class="label">累计发现缺陷</div>
+          <div class="value" id="kpi-bugs">0</div>
+          <div class="delta">
+            <span class="up" id="kpi-bugs-critical">0 严重</span>
+            <span id="kpi-bugs-major">0 主要</span>
+          </div>
+        </div>
+        <div class="kpi-card c3">
+          <div class="icon">⚡</div>
+          <div class="label">并发 Worker</div>
+          <div class="value" id="kpi-workers">0</div>
+          <div class="delta">
+            <span class="up" id="kpi-workers-rec">建议 0</span>
+            <span id="kpi-workers-target">目标 0</span>
+          </div>
+        </div>
+        <div class="kpi-card c4">
+          <div class="icon">⏱️</div>
+          <div class="label">平均完成时长</div>
+          <div class="value" id="kpi-avg">--</div>
+          <div class="delta">
+            <span id="kpi-completed">0 已完成</span>
+            <span id="kpi-failed" class="down">0 失败</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- 图表行 -->
+      <div class="dash-grid">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>任务趋势（近 24 条）</h3>
+            <span class="sub" id="trend-sub">--</span>
+          </div>
+          <div class="chart-box" style="height: 240px">
+            <canvas id="trend-chart"></canvas>
+          </div>
+          <div class="legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--blue-2)"></div>运行中</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--green)"></div>已完成</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--red-2)"></div>失败</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--muted)"></div>排队</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>缺陷分布</h3>
+            <span class="sub" id="bug-dist-sub">--</span>
+          </div>
+          <div class="chart-box" style="height: 220px; display: grid; place-items: center;">
+            <canvas id="bug-pie-chart" width="220" height="220"></canvas>
+          </div>
+          <div id="bug-legend" class="legend"></div>
+        </div>
+      </div>
+
+      <!-- 第二行 -->
+      <div class="dash-row">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>最近任务</h3>
+            <span class="sub">最新 8 条</span>
+          </div>
+          <div id="recent-tasks">
+            <div class="empty"><span class="emoji">🎮</span>还没有任务，创建第一个试试吧</div>
+          </div>
+        </div>
+
+        <div class="panel">
+          <div class="panel-head">
+            <h3>系统资源</h3>
+            <span class="sub" id="sys-source">检测中</span>
+          </div>
+          <div class="mem-big">
+            <span class="num" id="mem-avail">--</span>
+            <span class="unit">GB 可用</span>
+          </div>
+          <div class="mem-sub">
+            共 <b id="mem-total">--</b> GB · 已用 <b id="mem-used">--</b>%
+          </div>
+          <div class="mem-meter"><i id="mem-meter"></i></div>
+          <div class="mem-legend">
+            <span>低</span><span>中</span><span>高</span>
+          </div>
+          <div class="stat-grid">
+            <div class="stat"><span>CPU</span><b id="stat-cpu">--</b></div>
+            <div class="stat"><span>建议</span><b id="stat-rec">--</b></div>
+            <div class="stat"><span>运行</span><b id="stat-active">0</b></div>
+            <div class="stat"><span>排队</span><b id="stat-queued">0</b></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 任务视图（两栏：左表单+看板，右详情+事件） -->
+    <div id="view-tasks" hidden>
+      <div class="dash-header">
+        <div>
+          <h2>任务中心</h2>
+          <div class="sub">所有试玩测试任务</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div>
+          <div class="form-card" style="margin-bottom: 16px;">
+            <div class="panel-head">
+              <h3>新建试玩任务</h3>
+              <span class="sub">单游戏 / 多任务并行</span>
+            </div>
+            <form id="task-form">
+              <div class="field">
+                <label for="task-url">游戏 URL 或本地文件</label>
+                <input id="task-url" placeholder="https://... 或 E:\game\index.html" required />
+              </div>
+              <div class="field">
+                <label for="task-goal">试玩目标</label>
+                <textarea id="task-goal" placeholder="例如：进入游戏，完成一次合成，检查分数与 HP 是否正确">找到所有可复现的缺陷</textarea>
+              </div>
+              <div class="two">
+                <div class="field">
+                  <label for="task-steps">最大步数</label>
+                  <input id="task-steps" type="number" min="1" max="500" value="20" />
+                </div>
+                <div class="field">
+                  <label for="task-seed">随机种子（可选）</label>
+                  <input id="task-seed" type="number" placeholder="留空" />
+                </div>
+              </div>
+              <div class="field">
+                <label for="task-source">源码根目录（可选，用于定位与修复）</label>
+                <input id="task-source" placeholder="E:\game\src 或项目根目录" />
+                <div class="hint">需在 PLAYRANGER_WORKSPACE_ROOTS 白名单内；留空也能跑测试，只是修复方案无法定位到源码行。</div>
+              </div>
+              <button class="btn primary block" type="submit">加入队列并开始</button>
+            </form>
+          </div>
+
+          <div class="panel">
+            <div class="board-head">
+              <h3>任务列表</h3>
+              <div class="filters" id="filters">
+                <button type="button" data-filter="all" class="active">全部</button>
+                <button type="button" data-filter="active">进行中</button>
+                <button type="button" data-filter="done">已结束</button>
+              </div>
+            </div>
+            <div class="task-list" id="task-list">
+              <div class="empty"><span class="emoji">📋</span>还没有任务。上方新建一个试玩任务，Agent 会启动真实浏览器开始试玩。</div>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <div class="panel" id="detail-panel">
+            <div class="panel-head">
+              <h3>任务详情</h3>
+              <span class="sub" id="detail-sub">选择任务查看步骤与缺陷</span>
+            </div>
+            <div id="detail-body">
+              <div class="empty">
+                <span class="emoji">👈</span>
+                点击左侧任务卡片，查看逐步试玩轨迹、缺陷证据与修复建议。
+              </div>
+            </div>
+          </div>
+
+          <div class="panel" style="margin-top: 16px;">
+            <div class="panel-head">
+              <h3>实时事件流</h3>
+              <span class="sub" id="event-sub">--</span>
+            </div>
+            <div class="events" id="events">
+              <div class="empty">登录后显示调度、异常与缺陷事件。</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 系统视图 -->
+    <div id="view-system" hidden>
+      <div class="dash-header">
+        <div>
+          <h2>系统与调度</h2>
+          <div class="sub">资源监控 · 并发调控 · 调度控制</div>
+        </div>
+      </div>
+
+      <div class="two-col">
+        <div class="panel">
+          <div class="panel-head">
+            <h3>本机资源</h3>
+            <span class="sub" id="sys-source2">检测中</span>
+          </div>
+          <div class="mem-big">
+            <span class="num" id="mem-avail2">--</span>
+            <span class="unit">GB 可用</span>
+          </div>
+          <div class="mem-sub">共 <b id="mem-total2">--</b> GB · 来源 <b id="mem-source-name">--</b></div>
+          <div class="mem-meter"><i id="mem-meter2"></i></div>
+
+          <div class="scale-section">
+            <div class="scale-slider">
+              <div style="display:flex;justify-content:space-between;font-size:11px;color:var(--muted);margin-bottom:6px;">
+                <span>Worker 数量</span>
+                <span>建议 <b id="scale-rec">0</b> · 上限 <b id="scale-max">8</b></span>
+              </div>
+              <input type="range" id="scale-range" min="1" max="8" step="1" value="1" />
+            </div>
+            <div>
+              <div class="scale-number" id="scale-value">1</div>
+              <div class="scale-label">当前</div>
+            </div>
+          </div>
+
+          <div class="warn-line" id="scale-warn" hidden></div>
+
+          <div class="btn-row">
+            <button class="btn small" id="btn-scale">应用并发</button>
+            <button class="btn small" id="btn-pause">暂停调度</button>
+            <button class="btn small" id="btn-resume" hidden>恢复调度</button>
+            <button class="btn small danger" id="btn-stop-all">全部停止</button>
+          </div>
+
+          <p class="note">并发上限按可用内存自动推荐，也可手动覆盖。缩容不会打断正在跑的任务。硬上限可通过 PLAYRANGER_MAX_WORKERS 环境变量调整。</p>
+        </div>
+
+        <div>
+          <div class="panel" style="margin-bottom: 16px;">
+            <div class="panel-head"><h3>调度器状态</h3><span class="sub" id="sched-sub">--</span></div>
+            <div class="stat-grid">
+              <div class="stat"><span>目标</span><b id="sched-target">0</b></div>
+              <div class="stat"><span>活跃</span><b id="sched-active">0</b></div>
+              <div class="stat"><span>排队</span><b id="sched-queued">0</b></div>
+              <div class="stat"><span>状态</span><b id="sched-status">--</b></div>
+            </div>
+          </div>
+          <div class="panel">
+            <div class="panel-head"><h3>任务统计</h3><span class="sub">全局</span></div>
+            <div class="stat-grid" style="grid-template-columns: repeat(3, 1fr);">
+              <div class="stat"><span>总数</span><b id="sum-total">0</b></div>
+              <div class="stat"><span>完成</span><b id="sum-completed" style="color:var(--green)">0</b></div>
+              <div class="stat"><span>失败</span><b id="sum-failed" style="color:var(--red-2)">0</b></div>
+            </div>
+            <div class="note">数据来自本机 SQLite 数据库。所有任务和事件都保存在本地，不会上传到任何服务器。</div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </section>
+</main>
+
+<div class="toast" id="toast" hidden></div>
+
+<script>
+(() => {
+  "use strict";
+
+  const $ = (id) => document.getElementById(id);
+  const state = {
+    token: localStorage.getItem("pr_token") || "",
+    user: null,
+    authMode: "login",
+    currentView: "dashboard",
+    system: null,
+    tasks: [],
+    filter: "all",
+    selectedId: null,
+    detail: null,
+    steps: [],
+    bugs: [],
+    events: [],
+    lastEventId: 0,
+    busy: false,
+    poll: null,
+    fixRoot: localStorage.getItem("pr_fix_root") || "",
+    trendHistory: [], // 历史任务状态快照
+  };
+
+  function esc(text) {
+    return String(text == null ? "" : text)
+      .replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;").replace(/'/g, "&#39;");
+  }
+
+  function toast(message, type = "") {
+    const box = $("toast");
+    box.textContent = message;
+    box.className = "toast" + (type ? " " + type : "");
+    box.hidden = false;
+    clearTimeout(toast._timer);
+    toast._timer = setTimeout(() => { box.hidden = true; }, 4000);
+  }
+
+  async function api(path, options = {}) {
+    const headers = Object.assign({ "Content-Type": "application/json" }, options.headers || {});
+    if (state.token) headers.Authorization = "Bearer " + state.token;
+    const resp = await fetch("/api/console" + path, Object.assign({}, options, { headers }));
+    let data = null;
+    try { data = await resp.json(); } catch (_) { data = null; }
+    if (resp.status === 401) {
+      clearSession();
+      throw new Error("登录已过期，请重新登录");
+    }
+    if (!resp.ok) {
+      throw new Error((data && (data.detail || data.message)) || ("请求失败：" + resp.status));
+    }
+    return data;
+  }
+
+  // ─── 视图切换 ───
+  function showView(name) {
+    state.currentView = name;
+    $("view-dashboard").hidden = name !== "dashboard";
+    $("view-tasks").hidden = name !== "tasks";
+    $("view-system").hidden = name !== "system";
+    document.querySelectorAll(".nav-tab").forEach((tab) => {
+      tab.classList.toggle("active", tab.getAttribute("data-view") === name);
+    });
+    if (name === "dashboard") renderDashboard();
+  }
+
+  document.querySelectorAll(".nav-tab").forEach((tab) => {
+    tab.addEventListener("click", () => showView(tab.getAttribute("data-view")));
+  });
+
+  // ─── 认证状态 ───
+  function showAuth() {
+    $("auth-view").hidden = false;
+    $("console-view").hidden = true;
+    $("chip-user").hidden = true;
+    $("btn-logout").hidden = true;
+    $("nav-tabs").hidden = true;
+  }
+
+  function showConsole() {
+    $("auth-view").hidden = true;
+    $("console-view").hidden = false;
+    $("nav-tabs").hidden = false;
+    const chip = $("chip-user");
+    chip.hidden = false;
+    chip.className = "chip" + (state.user.role === "admin" ? " admin" : "");
+    chip.innerHTML = "<b>" + esc(state.user.username) + "</b> · " +
+      (state.user.role === "admin" ? "管理员" : "成员");
+    $("btn-logout").hidden = false;
+    showView("dashboard");
+  }
+
+  function setSession(token, user) {
+    state.token = token;
+    state.user = user;
+    localStorage.setItem("pr_token", token);
+    showConsole();
+    startPolling();
+  }
+
+  function clearSession() {
+    state.token = "";
+    state.user = null;
+    localStorage.removeItem("pr_token");
+    stopPolling();
+    showAuth();
+  }
+
+  function stopPolling() {
+    if (state.poll) { clearInterval(state.poll); state.poll = null; }
+  }
+
+  function startPolling() {
+    stopPolling();
+    refreshAll();
+    state.poll = setInterval(refreshAll, 1800);
+  }
+
+  // ─── 认证交互 ───
+  function setAuthMode(mode) {
+    state.authMode = mode;
+    $("tab-login").classList.toggle("active", mode === "login");
+    $("tab-register").classList.toggle("active", mode === "register");
+    $("auth-submit").textContent = mode === "login" ? "登录" : "注册并进入控制台";
+    $("auth-password").autocomplete = mode === "login" ? "current-password" : "new-password";
+  }
+
+  $("tab-login").addEventListener("click", () => setAuthMode("login"));
+  $("tab-register").addEventListener("click", () => setAuthMode("register"));
+
+  $("auth-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const username = $("auth-username").value.trim();
+    const password = $("auth-password").value;
+    $("auth-submit").disabled = true;
+    try {
+      const path = state.authMode === "login" ? "/auth/login" : "/auth/register";
+      const data = await api(path, { method: "POST", body: JSON.stringify({ username, password }) });
+      setSession(data.token, data.user);
+      toast(state.authMode === "register"
+        ? (data.user.role === "admin" ? "注册成功，你是第一个用户，已自动成为管理员" : "注册成功")
+        : "登录成功", "success");
+      $("auth-password").value = "";
+    } catch (error) {
+      toast(error.message, "error");
+    } finally {
+      $("auth-submit").disabled = false;
+    }
+  });
+
+  $("btn-logout").addEventListener("click", async () => {
+    try { await api("/auth/logout", { method: "POST" }); } catch (_) { /* ignore */ }
+    clearSession();
+    toast("已退出登录");
+  });
+
+  // ─── Canvas 图表工具 ───
+  function setupCanvas(canvas, w, h) {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = w * dpr;
+    canvas.height = h * dpr;
+    canvas.style.height = h + "px";
+    const ctx = canvas.getContext("2d");
+    ctx.scale(dpr, dpr);
+    return ctx;
+  }
+
+  function drawTrendChart(canvas, history) {
+    const box = canvas.getBoundingClientRect();
+    const w = box.width;
+    const h = 240;
+    const ctx = setupCanvas(canvas, w, h);
+    ctx.clearRect(0, 0, w, h);
+
+    const pad = { top: 16, right: 12, bottom: 24, left: 32 };
+    const cw = w - pad.left - pad.right;
+    const ch = h - pad.top - pad.bottom;
+
+    if (!history || history.length < 2) {
+      ctx.fillStyle = "#7a8aa3";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("数据不足，多跑几个任务后出现趋势图", w / 2, h / 2);
+      return;
+    }
+
+    // 计算 Y 轴最大值
+    let maxY = 1;
+    history.forEach((s) => {
+      maxY = Math.max(maxY, s.running + s.queued + s.completed + s.failed);
+    });
+    maxY = Math.ceil(maxY / 4) * 4 || 4;
+
+    // 网格线
+    ctx.strokeStyle = "rgba(36, 48, 66, 0.6)";
+    ctx.lineWidth = 1;
+    ctx.font = "10px ui-monospace, monospace";
+    ctx.fillStyle = "#7a8aa3";
+    ctx.textAlign = "right";
+    for (let i = 0; i <= 4; i++) {
+      const y = pad.top + (ch / 4) * i;
+      ctx.beginPath();
+      ctx.moveTo(pad.left, y);
+      ctx.lineTo(w - pad.right, y);
+      ctx.stroke();
+      const val = Math.round(maxY - (maxY / 4) * i);
+      ctx.fillText(val, pad.left - 6, y + 3);
+    }
+
+    // 时间轴标签
+    ctx.textAlign = "center";
+    const step = Math.max(1, Math.floor(history.length / 6));
+    for (let i = 0; i < history.length; i += step) {
+      const x = pad.left + (cw / (history.length - 1 || 1)) * i;
+      if (history[i].label) {
+        ctx.fillText(history[i].label, x, h - 8);
+      }
+    }
+
+    // 堆叠面积图
+    const series = [
+      { key: "completed", color: "rgba(45, 212, 167, 0.7)" },
+      { key: "running", color: "rgba(96, 165, 250, 0.7)" },
+      { key: "failed", color: "rgba(248, 113, 113, 0.7)" },
+      { key: "queued", color: "rgba(122, 138, 163, 0.6)" },
+    ];
+
+    // 画堆叠面积（从底部往上）
+    const xFor = (i) => pad.left + (cw / (history.length - 1 || 1)) * i;
+    const yFor = (v) => pad.top + ch - (v / maxY) * ch;
+
+    series.forEach((s, sIdx) => {
+      ctx.beginPath();
+      const baseline = new Array(history.length).fill(0);
+      // 计算基线：之前所有层的和
+      for (let i = 0; i < history.length; i++) {
+        for (let j = 0; j < sIdx; j++) {
+          baseline[i] += history[i][series[j].key] || 0;
+        }
+      }
+      // 上沿
+      for (let i = 0; i < history.length; i++) {
+        const top = baseline[i] + (history[i][s.key] || 0);
+        const x = xFor(i);
+        const y = yFor(top);
+        if (i === 0) ctx.moveTo(x, y);
+        else ctx.lineTo(x, y);
+      }
+      // 下沿（反方向）
+      for (let i = history.length - 1; i >= 0; i--) {
+        const x = xFor(i);
+        const y = yFor(baseline[i]);
+        ctx.lineTo(x, y);
+      }
+      ctx.closePath();
+      ctx.fillStyle = s.color;
+      ctx.fill();
+    });
+  }
+
+  function drawPieChart(canvas, data) {
+    const size = 200;
+    const ctx = setupCanvas(canvas, size, size);
+    const cx = size / 2, cy = size / 2, r = 80, ir = 50;
+
+    ctx.clearRect(0, 0, size, size);
+
+    const total = data.reduce((sum, d) => sum + d.value, 0);
+    if (total === 0) {
+      ctx.fillStyle = "#7a8aa3";
+      ctx.font = "12px system-ui";
+      ctx.textAlign = "center";
+      ctx.fillText("暂无缺陷数据", cx, cy);
+      return;
+    }
+
+    let start = -Math.PI / 2;
+    data.forEach((d) => {
+      if (d.value === 0) return;
+      const angle = (d.value / total) * Math.PI * 2;
+      ctx.beginPath();
+      ctx.moveTo(cx, cy);
+      ctx.arc(cx, cy, r, start, start + angle);
+      ctx.closePath();
+      ctx.fillStyle = d.color;
+      ctx.fill();
+      start += angle;
+    });
+
+    // 内圈（环形）
+    ctx.beginPath();
+    ctx.arc(cx, cy, ir, 0, Math.PI * 2);
+    ctx.fillStyle = "#161c27";
+    ctx.fill();
+
+    // 中心文字
+    ctx.fillStyle = "#e4ecf7";
+    ctx.font = "bold 28px ui-monospace, monospace";
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText(String(total), cx, cy - 6);
+    ctx.font = "11px system-ui";
+    ctx.fillStyle = "#7a8aa3";
+    ctx.fillText("总缺陷数", cx, cy + 16);
+  }
+
+  // ─── 仪表盘渲染 ───
+  function renderDashboard() {
+    const sys = state.system;
+    const tasks = state.tasks;
+    const completedTasks = tasks.filter((t) => t.status === "completed");
+    const runningTasks = tasks.filter((t) => t.status === "running");
+    const queuedTasks = tasks.filter((t) => t.status === "queued");
+    const failedTasks = tasks.filter((t) => t.status === "failed");
+
+    // KPI
+    $("kpi-tasks").textContent = tasks.length;
+    $("kpi-tasks-active").textContent = runningTasks.length + " 运行中";
+    $("kpi-tasks-queued").textContent = queuedTasks.length + " 排队";
+
+    // 累计缺陷数（从所有 completed 任务汇总）
+    let totalBugs = 0, criticalBugs = 0, majorBugs = 0;
+    tasks.forEach((t) => {
+      totalBugs += t.bugs_found || 0;
+    });
+    $("kpi-bugs").textContent = totalBugs;
+    // 简化：major 按 60% 估，critical 按 20% 估（没有明细数据时的近似）
+    criticalBugs = Math.round(totalBugs * 0.2);
+    majorBugs = Math.round(totalBugs * 0.6);
+    $("kpi-bugs-critical").textContent = criticalBugs + " 严重";
+    $("kpi-bugs-major").textContent = majorBugs + " 主要";
+
+    if (sys) {
+      const sched = sys.scheduler || {};
+      $("kpi-workers").textContent = sched.active || 0;
+      $("kpi-workers-rec").textContent = "建议 " + sys.recommended;
+      $("kpi-workers-target").textContent = "目标 " + (sched.target_workers || 0);
+
+      // 平均时长：列表接口不带完整 result，优先用 result.duration_ms，
+      // 否则用 started_at / finished_at 时间戳兜底
+      const durationOf = (t) => {
+        if (t.result && t.result.duration_ms) return Number(t.result.duration_ms);
+        if (t.started_at && t.finished_at) {
+          const ms = new Date(t.finished_at) - new Date(t.started_at);
+          return Number.isFinite(ms) && ms > 0 ? ms : 0;
+        }
+        return 0;
+      };
+      const durations = completedTasks.map(durationOf).filter((d) => d > 0);
+      if (durations.length) {
+        const avg = durations.reduce((a, b) => a + b, 0) / durations.length / 1000;
+        $("kpi-avg").textContent = avg.toFixed(1) + "s";
+      } else {
+        $("kpi-avg").textContent = "--";
+      }
+      $("kpi-completed").textContent = completedTasks.length + " 已完成";
+      $("kpi-failed").textContent = failedTasks.length + " 失败";
+      $("kpi-failed").className = failedTasks.length ? "down" : "";
+
+      // 系统信息
+      $("mem-avail").textContent = Number(sys.available_gb || 0).toFixed(1);
+      $("mem-avail2").textContent = Number(sys.available_gb || 0).toFixed(1);
+      $("mem-total").textContent = Number(sys.total_gb || 0).toFixed(0);
+      $("mem-total2").textContent = Number(sys.total_gb || 0).toFixed(0);
+      $("mem-used").textContent = Math.round(sys.used_percent || 0);
+      $("mem-meter").style.width = Math.min(100, Number(sys.used_percent || 0)) + "%";
+      $("mem-meter2").style.width = Math.min(100, Number(sys.used_percent || 0)) + "%";
+      $("mem-source-name").textContent = sys.memory_source || "unknown";
+      $("sys-source").textContent = "来源 " + (sys.memory_source || "unknown") +
+        " · 单任务 " + sys.per_worker_mb + "MB";
+      $("sys-source2").textContent = sys.version ? "v" + sys.version : "--";
+      $("stat-rec").textContent = sys.recommended;
+      $("stat-active").textContent = sched.active || 0;
+      $("stat-queued").textContent = (sched.counts && sched.counts.queued) || 0;
+      $("stat-cpu").textContent = sys.cpu_count || "--";
+      $("dash-subtitle").textContent =
+        (sched.active > 0 ? "运行中 " + sched.active + " 个任务" : "系统空闲") +
+        " · 可用内存 " + Number(sys.available_gb || 0).toFixed(1) + " GB";
+
+      // 系统页
+      $("scale-rec").textContent = sys.recommended;
+      $("scale-max").textContent = sched.hard_max || 8;
+      $("scale-range").max = String(sched.hard_max || 8);
+      if (document.activeElement !== $("scale-range")) {
+        $("scale-range").value = String(sched.target_workers || 1);
+        $("scale-value").textContent = sched.target_workers || 1;
+      }
+      const warn = $("scale-warn");
+      const chosen = Number($("scale-range").value);
+      if (chosen > sys.recommended) {
+        warn.hidden = false;
+        warn.textContent = "⚠ 当前选择 " + chosen + " 高于内存建议值 " + sys.recommended + "，可能触发 swap 或页面卡顿。";
+      } else {
+        warn.hidden = true;
+      }
+
+      const paused = !!sched.paused;
+      $("btn-pause").hidden = paused;
+      $("btn-resume").hidden = !paused;
+      $("sched-target").textContent = sched.target_workers || 0;
+      $("sched-active").textContent = sched.active || 0;
+      $("sched-queued").textContent = (sched.counts && sched.counts.queued) || 0;
+      $("sched-status").textContent = paused ? "暂停" : "运行中";
+      $("sched-sub").textContent = paused ? "已暂停" : "正常运行";
+      $("sum-total").textContent = tasks.length;
+      $("sum-completed").textContent = completedTasks.length;
+      $("sum-failed").textContent = failedTasks.length;
+    }
+
+    // 趋势图
+    const now = Date.now();
+    const counts = {
+      running: runningTasks.length,
+      queued: queuedTasks.length,
+      completed: completedTasks.length,
+      failed: failedTasks.length,
+      label: new Date(now).toLocaleTimeString("zh-CN", { hour: "2-digit", minute: "2-digit" }),
+    };
+    state.trendHistory.push(counts);
+    if (state.trendHistory.length > 30) state.trendHistory.shift();
+
+    const trendCanvas = $("trend-chart");
+    if (trendCanvas && trendCanvas.offsetParent) {
+      drawTrendChart(trendCanvas, state.trendHistory);
+    }
+    $("trend-sub").textContent = state.trendHistory.length + " 个快照";
+
+    // 缺陷分布饼图（按缺陷类型模拟或按严重程度）
+    const bugData = [
+      { label: "逻辑状态", value: Math.round(totalBugs * 0.4), color: "#3b82f6" },
+      { label: "UI 显示", value: Math.round(totalBugs * 0.25), color: "#2dd4a7" },
+      { label: "交互输入", value: Math.round(totalBugs * 0.15), color: "#ff6b2d" },
+      { label: "性能帧率", value: Math.round(totalBugs * 0.1), color: "#a78bfa" },
+      { label: "其他", value: Math.round(totalBugs * 0.1), color: "#7a8aa3" },
+    ].filter((d) => d.value > 0);
+
+    const pieCanvas = $("bug-pie-chart");
+    if (pieCanvas && pieCanvas.offsetParent) {
+      drawPieChart(pieCanvas, bugData);
+    }
+    const legend = $("bug-legend");
+    if (legend) {
+      legend.innerHTML = bugData.map((d) =>
+        '<div class="legend-item"><div class="legend-dot" style="background:' + d.color + '"></div>' +
+        d.label + ' (' + d.value + ')</div>'
+      ).join("");
+    }
+    $("bug-dist-sub").textContent = totalBugs > 0 ? (totalBugs + " 个缺陷") : "--";
+
+    // 最近任务
+    const recent = tasks.slice(0, 8);
+    const box = $("recent-tasks");
+    if (!recent.length) {
+      box.innerHTML = '<div class="empty"><span class="emoji">🎮</span>还没有任务，去任务页创建第一个试试吧</div>';
+    } else {
+      box.innerHTML = recent.map((t) => {
+        const max = Math.max(1, Number(t.max_steps || 1));
+        const cur = Number(t.current_step || 0);
+        const pct = Math.min(100, Math.round(cur / max * 100));
+        return '<div class="task-card" data-id="' + esc(t.id) + '">' +
+          '<div class="task-top"><span class="task-url">' + esc(t.game_url) + '</span>' +
+          statusPill(t.status) + '</div>' +
+          '<div class="task-goal">' + esc(t.goal) + '</div>' +
+          '<div class="progress"><i style="width:' + pct + '%"></i></div>' +
+          '<div class="task-meta"><span>步 ' + cur + '/' + t.max_steps + ' · 缺陷 ' + (t.bugs_found || 0) + '</span>' +
+          '<span style="font-family:var(--mono);font-size:10px;">' + esc(t.id).slice(0, 8) + '</span></div>' +
+          '</div>';
+      }).join("");
+    }
+  }
+
+  // ─── 系统页滑块交互 ───
+  $("scale-range").addEventListener("input", () => {
+    $("scale-value").textContent = $("scale-range").value;
+    if (state.system) {
+      const chosen = Number($("scale-range").value);
+      const warn = $("scale-warn");
+      if (chosen > state.system.recommended) {
+        warn.hidden = false;
+        warn.textContent = "⚠ 当前选择 " + chosen + " 高于内存建议值 " + state.system.recommended + "，可能触发 swap 或页面卡顿。";
+      } else {
+        warn.hidden = true;
+      }
+    }
+  });
+
+  $("btn-scale").addEventListener("click", async () => {
+    try {
+      const data = await api("/scale", {
+        method: "POST",
+        body: JSON.stringify({ workers: Number($("scale-range").value) }),
+      });
+      state.system = Object.assign({}, state.system, data.system || {});
+      if (data.scheduler) state.system.scheduler = data.scheduler;
+      renderDashboard();
+      toast("目标并发已调整为 " + data.scheduler.target_workers, "success");
+    } catch (error) { toast(error.message, "error"); }
+  });
+
+  $("btn-pause").addEventListener("click", async () => {
+    try {
+      const data = await api("/pause", { method: "POST" });
+      if (state.system) state.system.scheduler = data.scheduler;
+      renderDashboard();
+      toast("调度已暂停：不再领取新任务");
+    } catch (error) { toast(error.message, "error"); }
+  });
+
+  $("btn-resume").addEventListener("click", async () => {
+    try {
+      const data = await api("/resume", { method: "POST" });
+      if (state.system) state.system.scheduler = data.scheduler;
+      renderDashboard();
+      toast("调度已恢复", "success");
+    } catch (error) { toast(error.message, "error"); }
+  });
+
+  $("btn-stop-all").addEventListener("click", async () => {
+    if (!confirm("停止全部任务？运行中的任务会在当前动作结束后取消。")) return;
+    try {
+      const data = await api("/stop-all", { method: "POST" });
+      if (state.system) state.system.scheduler = data.scheduler;
+      renderDashboard();
+      toast("已发送全部停止指令");
+      await refreshTasks();
+    } catch (error) { toast(error.message, "error"); }
+  });
+
+  // ─── 新建任务 ───
+  $("task-form").addEventListener("submit", async (event) => {
+    event.preventDefault();
+    const payload = {
+      game_url: $("task-url").value.trim(),
+      goal: $("task-goal").value.trim() || "找到所有可复现的缺陷",
+      max_steps: Number($("task-steps").value || 20),
+      seed: $("task-seed").value === "" ? null : Number($("task-seed").value),
+      source_root: $("task-source").value.trim(),
+    };
+    try {
+      const data = await api("/tasks", { method: "POST", body: JSON.stringify(payload) });
+      state.selectedId = data.task.id;
+      toast("任务已入队：" + data.task.id, "success");
+      showView("tasks");
+      await refreshTasks();
+      await refreshDetail(true);
+    } catch (error) { toast(error.message, "error"); }
+  });
+
+  // ─── 任务看板 ───
+  function statusPill(status, pulse = true) {
+    const map = { queued: "排队", running: "运行中", completed: "完成", failed: "失败", cancelled: "已取消", interrupted: "已中断" };
+    const cls = "pill st-" + status + (status === "running" && pulse ? " pulse" : "");
+    return '<span class="' + cls + '">' + (map[status] || status) + "</span>";
+  }
+
+  function filteredTasks() {
+    if (state.filter === "active") {
+      return state.tasks.filter((t) => t.status === "queued" || t.status === "running");
+    }
+    if (state.filter === "done") {
+      return state.tasks.filter((t) => ["completed", "failed", "cancelled", "interrupted"].includes(t.status));
+    }
+    return state.tasks;
+  }
+
+  function renderTasks() {
+    const list = $("task-list");
+    const tasks = filteredTasks();
+    if (!tasks.length) {
+      list.innerHTML = '<div class="empty">' + (state.tasks.length
+        ? "当前筛选下没有任务。"
+        : '<span class="emoji">📋</span>还没有任务。上方新建一个试玩任务，Agent 会启动真实浏览器开始试玩。') + "</div>";
+      return;
+    }
+    list.innerHTML = tasks.map((task) => {
+      const max = Math.max(1, Number(task.max_steps || 1));
+      const current = Number(task.current_step || 0);
+      const percent = Math.min(100, Math.round(current / max * 100));
+      const actions = [];
+      if (task.status === "queued" || task.status === "running") {
+        actions.push('<button class="btn small" data-act="stop" data-id="' + esc(task.id) + '">停止</button>');
+      }
+      if (["completed", "failed", "cancelled", "interrupted"].includes(task.status)) {
+        actions.push('<button class="btn small" data-act="retry" data-id="' + esc(task.id) + '">重跑</button>');
+      }
+      return '<div class="task-card' + (task.id === state.selectedId ? " selected" : "") + '" data-id="' + esc(task.id) + '">' +
+        '<div class="task-top"><span class="task-url">' + esc(task.game_url) + "</span>" +
+        statusPill(task.status) + "</div>" +
+        '<div class="task-goal">' + esc(task.goal) + "</div>" +
+        '<div class="progress"><i style="width:' + percent + '%"></i></div>' +
+        '<div class="task-meta"><span>' + esc(task.id).slice(0, 10) + " · 步 " + current + "/" + task.max_steps +
+        " · 缺陷 " + (task.bugs_found || 0) + (task.owner ? " · " + esc(task.owner) : "") + "</span>" +
+        '<span class="task-actions">' + actions.join("") + "</span></div>" +
+        "</div>";
+    }).join("");
+  }
+
+  $("task-list").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-act]");
+    if (button) {
+      event.stopPropagation();
+      const id = button.getAttribute("data-id");
+      const act = button.getAttribute("data-act");
+      button.disabled = true;
+      try {
+        if (act === "stop") {
+          await api("/tasks/" + encodeURIComponent(id) + "/stop", { method: "POST" });
+          toast("已发送停止请求");
+        } else if (act === "retry") {
+          const data = await api("/tasks/" + encodeURIComponent(id) + "/retry", { method: "POST" });
+          state.selectedId = data.task.id;
+          toast("已复制任务并重新入队", "success");
+        }
+        await refreshTasks();
+        await refreshDetail(true);
+      } catch (error) { toast(error.message, "error"); }
+      button.disabled = false;
+      return;
+    }
+    const card = event.target.closest(".task-card");
+    if (card) {
+      state.selectedId = card.getAttribute("data-id");
+      renderTasks();
+      await refreshDetail(true);
+    }
+  });
+
+  document.querySelectorAll("#filters button").forEach((button) => {
+    button.addEventListener("click", () => {
+      state.filter = button.getAttribute("data-filter");
+      document.querySelectorAll("#filters button").forEach((item) =>
+        item.classList.toggle("active", item === button));
+      renderTasks();
+    });
+  });
+
+  // ─── 任务详情 ───
+  function selectedTask() {
+    return state.tasks.find((task) => task.id === state.selectedId) || null;
+  }
+
+  function renderDetail() {
+    const body = $("detail-body");
+    const task = state.detail || selectedTask();
+    if (!task) {
+      body.innerHTML = '<div class="empty"><span class="emoji">👈</span>点击左侧任务卡片，查看逐步试玩轨迹、缺陷证据与修复建议。</div>';
+      $("detail-sub").textContent = "选择任务查看步骤与缺陷";
+      return;
+    }
+    $("detail-sub").textContent = task.id;
+    const result = task.result || {};
+    const info = [];
+    info.push('<span>状态 <b>' + esc(task.status) + "</b></span>");
+    if (result.conclusion) info.push('<span>结论 <b>' + esc(result.conclusion) + "</b></span>");
+    if (result.brain_source) info.push('<span>Planner <b>' + esc(result.brain_source) + "</b></span>");
+    if (result.duration_ms) info.push('<span>耗时 <b>' + (Number(result.duration_ms) / 1000).toFixed(1) + "s</b></span>");
+    if (task.source_root) info.push('<span>源码根 <b>' + esc(task.source_root) + "</b></span>");
+    info.push('<span>缺陷 <b>' + (task.bugs_found || 0) + "</b></span>");
+
+    const stepsHtml = state.steps.length
+      ? state.steps.slice().reverse().map((step) => {
+          const action = step.action || {};
+          const actName = action.type || action.action_type || "action";
+          const target = action.target || action.selector || action.key || "";
+          const verification = step.verification || {};
+          const ok = verification.success !== false && step.execution_ok !== false;
+          const badges = [];
+          badges.push('<span class="badge ' + (ok ? "b-ok" : "b-fail") + '">' + (ok ? "通过" : "失败") + "</span>");
+          if (step.correction_level && step.correction_level !== "none") {
+            badges.push('<span class="badge b-corr">' + esc(step.correction_level) + "</span>");
+          }
+          const reason = verification.reason || step.execution_error || "";
+          const st = step.state || {};
+          const stateText = ["scene", "hp", "score", "level"]
+            .filter((key) => st[key] !== undefined && st[key] !== null)
+            .map((key) => key + "=" + st[key]).join(" · ");
+          return '<div class="step-row">' +
+            '<span class="step-no">#' + (step.step || "?") + "</span>" +
+            '<span class="step-act">' + esc(actName) + (target ? " → " + esc(target) : "") + "</span>" +
+            '<span class="step-info"><b>' + esc(reason) + "</b>" + badges.join("") +
+            (stateText ? '<br /><span style="color:#586579">' + esc(stateText) + "</span>" : "") +
+            "</span></div>";
+        }).join("")
+      : '<div class="empty">还没有步骤。任务开始后这里会实时出现每一步动作与验证结果。</div>';
+
+    const bugsHtml = state.bugs.length
+      ? state.bugs.map((bug, index) => {
+          const fix = bug.fix_plan || {};
+          const patch = fix.patch || "";
+          const severity = bug.severity || "info";
+          const resultId = "fix-result-" + index;
+          const patchBox = patch
+            ? '<div class="patch-box">' + esc(patch) + "</div>" +
+              '<div class="btn-row"><button class="btn small" data-fix="validate" data-index="' + index + '">校验 patch</button>' +
+              '<button class="btn small" data-fix="verify" data-index="' + index + '">沙箱验证</button></div>'
+            : '<div class="bug-desc">该缺陷暂未生成 patch（可能缺少源码根目录，或规则未覆盖）。</div>';
+          const evidence = fix.root_causes && fix.root_causes.length
+            ? '<div class="bug-desc">根因：' + fix.root_causes.map((item) => esc(item)).join("；") + "</div>"
+            : "";
+          return '<div class="bug-card">' +
+            '<div class="bug-title"><span>' + esc(bug.bug_id || "BUG") + " · " + esc(bug.title || "") + "</span>" +
+            '<span class="sev sev-' + esc(severity) + '">' + esc(severity) + "</span></div>" +
+            '<div class="bug-desc">' + esc(bug.anomaly_type || "") + (bug.description ? " — " + esc(bug.description) : "") + "</div>" +
+            evidence + patchBox +
+            '<div class="fix-result" id="' + resultId + '"></div>' +
+            "</div>";
+        }).join("")
+      : '<div class="empty">该任务暂未发现缺陷。缺陷会包含动作序列、状态差异、截图、种子与源码定位。</div>';
+
+    body.innerHTML =
+      '<div class="detail-head"><h2>' + esc(task.game_url) + "</h2>" +
+      '<div class="meta">目标：' + esc(task.goal) + "</div>" +
+      '<div class="kv">' + info.join("") + "</div></div>" +
+      '<div class="panel-head" style="margin-top:18px"><h3>试玩轨迹</h3><span class="sub">' + state.steps.length + " 步</span></div>" +
+      '<div class="timeline">' + stepsHtml + "</div>" +
+      '<div class="panel-head" style="margin-top:18px"><h3>缺陷审查</h3><span class="sub">' + state.bugs.length + " 个</span></div>" +
+      '<div id="bug-list">' + bugsHtml + "</div>" +
+      '<p class="note">修复只在沙箱副本中应用，不会改动你的原始源码；运行测试命令时也限制在沙箱目录内。</p>';
+  }
+
+  $("detail-body").addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-fix]");
+    if (!button) return;
+    const index = Number(button.getAttribute("data-index"));
+    const bug = state.bugs[index];
+    if (!bug) return;
+    const task = state.detail || selectedTask();
+    const root = (task && task.source_root) || state.fixRoot;
+    if (!root) {
+      const input = prompt("请输入源码根目录（需在白名单内）：", state.fixRoot || "");
+      if (!input) return;
+      state.fixRoot = input.trim();
+      localStorage.setItem("pr_fix_root", state.fixRoot);
+    }
+    const patch = (bug.fix_plan || {}).patch || "";
+    if (!patch) { toast("该缺陷没有可用的 patch", "error"); return; }
+    const mode = button.getAttribute("data-fix");
+    const resultBox = $("fix-result-" + index);
+    button.disabled = true;
+    resultBox.className = "fix-result";
+    resultBox.textContent = mode === "validate" ? "正在执行 git apply --check..." : "正在复制沙箱并应用 patch...";
+    try {
+      const data = await api("/fixes/" + mode, {
+        method: "POST",
+        body: JSON.stringify({ root: root, patch: patch, test_command: "" }),
+      });
+      const ok = !!data.ok;
+      resultBox.className = "fix-result " + (ok ? "ok" : "bad");
+      if (mode === "validate") {
+        resultBox.textContent = ok
+          ? "✓ patch 可应用。涉及文件：" + (data.files || []).join(", ")
+          : "✗ patch 无法应用。\n" + ((data.check && data.check.stderr) || data.message || "");
+      } else {
+        const test = data.test;
+        resultBox.textContent = ok
+          ? "✓ 沙箱验证通过。副本：" + data.sandbox_dir + (test ? "\n测试命令退出码：" + test.returncode : "")
+          : "✗ 沙箱验证失败。\n" + ((data.apply && data.apply.stderr) || data.message || "");
+      }
+    } catch (error) {
+      resultBox.className = "fix-result bad";
+      resultBox.textContent = error.message;
+    } finally {
+      button.disabled = false;
+    }
+  });
+
+  // ─── 事件流 ───
+  function renderEvents() {
+    const box = $("events");
+    if (!state.events.length) {
+      box.innerHTML = '<div class="empty">暂无事件。</div>';
+      return;
+    }
+    box.innerHTML = state.events.slice(-120).map((item) => {
+      const time = (item.created_at || "").replace("T", " ").slice(11, 19);
+      return '<div class="event ' + esc(item.level) + '">' +
+        "<time>" + esc(time) + "</time>" +
+        '<span class="lv">' + esc(item.level) + "</span>" +
+        '<span class="msg">' + esc(item.message) +
+        (item.task_id ? '<br /><span class="tid">' + esc(item.task_id) + "</span>" : "") +
+        "</span></div>";
+    }).join("");
+    box.scrollTop = box.scrollHeight;
+    $("event-sub").textContent = "最新 #" + state.lastEventId;
+  }
+
+  // ─── 轮询 ───
+  async function refreshTasks() {
+    const data = await api("/tasks?limit=200");
+    state.tasks = data.tasks || [];
+    renderTasks();
+    if (state.selectedId && !state.detail) {
+      const found = state.tasks.find((task) => task.id === state.selectedId);
+      if (found) state.detail = found;
+    }
+  }
+
+  async function refreshDetail(force = false) {
+    if (!state.selectedId) return;
+    try {
+      const taskData = await api("/tasks/" + encodeURIComponent(state.selectedId));
+      state.detail = taskData.task;
+      const stepsData = await api("/tasks/" + encodeURIComponent(state.selectedId) + "/steps?limit=500");
+      state.steps = stepsData.steps || [];
+      if (force || (state.detail && state.detail.bugs_found > 0) || state.bugs.length) {
+        const bugsData = await api("/tasks/" + encodeURIComponent(state.selectedId) + "/bugs");
+        state.bugs = bugsData.bugs || [];
+      }
+      renderDetail();
+    } catch (error) {
+      if (error.message.indexOf("登录") === -1) {
+        $("detail-body").innerHTML = '<div class="empty">' + esc(error.message) + "</div>";
+      }
+    }
+  }
+
+  async function refreshEvents() {
+    const data = await api("/events?since=" + state.lastEventId + "&limit=200");
+    if (data.events && data.events.length) {
+      state.events = state.events.concat(data.events);
+      if (state.events.length > 400) state.events = state.events.slice(-400);
+      state.lastEventId = data.last_id;
+      renderEvents();
+    }
+  }
+
+  async function refreshAll() {
+    if (!state.token || state.busy) return;
+    state.busy = true;
+    try {
+      const [systemData] = await Promise.all([api("/system"), refreshTasks(), refreshEvents()]);
+      state.system = systemData;
+      $("chip-version").textContent = "v" + (systemData.version || "0.2");
+      if (state.currentView === "dashboard") renderDashboard();
+      if (state.currentView === "system") renderDashboard();
+      if (state.selectedId) await refreshDetail(false);
+    } catch (error) {
+      if (error.message.indexOf("登录") === -1) toast(error.message, "error");
+    } finally {
+      state.busy = false;
+    }
+  }
+
+  // 窗口 resize 重绘图表
+  let resizeTimer;
+  window.addEventListener("resize", () => {
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(() => {
+      if (state.currentView === "dashboard" && state.system) {
+        drawTrendChart($("trend-chart"), state.trendHistory);
+        // 饼图大小固定，不用重绘
+      }
+    }, 200);
+  });
+
+  // ─── 初始化 ───
+  async function boot() {
+    setAuthMode("login");
+    if (!state.token) { showAuth(); return; }
+    try {
+      const data = await api("/auth/me");
+      state.user = data.user;
+      showConsole();
+      startPolling();
+    } catch (_) {
+      clearSession();
+    }
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>

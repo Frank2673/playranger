@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PlayRanger Demo Game</title>
+  <style>
+    body {
+      margin: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      min-height: 100vh;
+      background: #1a1f2e;
+      font-family: sans-serif;
+      color: #e0e6f0;
+    }
+    #game {
+      width: 400px;
+      height: 300px;
+      background: #0f172a;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      position: relative;
+      overflow: hidden;
+    }
+    .screen {
+      position: absolute;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 16px;
+    }
+    .screen.active { display: flex; }
+    button {
+      padding: 10px 24px;
+      font-size: 16px;
+      background: #22c55e;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+    }
+    button:hover { background: #16a34a; }
+    #hp-bar {
+      position: absolute;
+      top: 12px;
+      left: 12px;
+      width: 100px;
+      height: 8px;
+      background: #334155;
+      border-radius: 4px;
+      overflow: hidden;
+    }
+    #hp-fill {
+      height: 100%;
+      background: #ef4444;
+      transition: width 0.2s;
+    }
+    #score {
+      position: absolute;
+      top: 8px;
+      right: 12px;
+      font-weight: bold;
+    }
+    .player {
+      position: absolute;
+      bottom: 40px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 30px;
+      height: 30px;
+      background: #3b82f6;
+      border-radius: 4px;
+    }
+    h2 { margin: 0; }
+  </style>
+</head>
+<body>
+  <h3>PlayRanger Demo Game</h3>
+  <div id="game">
+    <!-- 菜单 -->
+    <div id="menu-screen" class="screen active">
+      <h2>🎮 Demo Game</h2>
+      <p>一个简单的示例小游戏</p>
+      <button id="start-btn">开始游戏</button>
+    </div>
+
+    <!-- 关卡1 -->
+    <div id="level1-screen" class="screen">
+      <div id="hp-bar"><div id="hp-fill" style="width: 100%"></div></div>
+      <div id="score">0</div>
+      <div class="player" id="player1"></div>
+      <h2 style="margin-top: 80px">Level 1</h2>
+      <button id="level1-next">下一关</button>
+    </div>
+
+    <!-- 关卡2 -->
+    <div id="level2-screen" class="screen">
+      <div id="hp-bar"><div id="hp-fill" style="width: 100%"></div></div>
+      <div id="score">0</div>
+      <h2 style="margin-top: 80px">Level 2</h2>
+      <button id="level2-restart" style="background: #f59e0b">重新开始</button>
+      <button id="level2-win">通关</button>
+    </div>
+
+    <!-- 胜利 -->
+    <div id="win-screen" class="screen">
+      <h2>🎉 通关！</h2>
+      <p>恭喜完成 Demo</p>
+      <p id="win-score-text">最终得分: 0</p>
+      <button id="win-restart">再玩一次</button>
+    </div>
+  </div>
+
+  <script>
+    // === 游戏状态 ===
+    const state = {
+      scene: "menu",       // menu / level1 / level2 / win
+      hp: 100,
+      score: 0,
+      level: 0,
+    };
+
+    // === UI 渲染同步（把 state 反映到 DOM 上） ===
+    function renderUI() {
+      // HP 条
+      const hpFill = document.getElementById("hp-fill");
+      if (hpFill) {
+        const hpPct = Math.max(0, Math.min(100, state.hp));
+        hpFill.style.width = hpPct + "%";
+      }
+      // 分数文本（当前场景内的 #score）
+      const activeScreen = document.querySelector(".screen.active");
+      if (activeScreen) {
+        const scoreEl = activeScreen.querySelector("#score");
+        if (scoreEl) {
+          scoreEl.textContent = state.score;
+        }
+      }
+      // 胜利页分数显示
+      const winScoreText = document.getElementById("win-score-text");
+      if (winScoreText) {
+        // BUG-002: 胜利页面显示的是旧分数（用了 score - 200 而不是实际 score）
+        // 正常应该是: state.score
+        winScoreText.textContent = "最终得分: " + (state.score - 200);
+      }
+    }
+
+    // === 场景切换 ===
+    function showScreen(id) {
+      document.querySelectorAll(".screen").forEach(s => s.classList.remove("active"));
+      document.getElementById(id).classList.add("active");
+      state.scene = id.replace("-screen", "").replace("level", "level");
+      renderUI();  // 切换场景后刷新 UI
+    }
+
+    // === 按钮事件 ===
+    document.getElementById("start-btn").onclick = () => {
+      state.hp = 100;
+      state.score = 0;
+      state.level = 1;
+      state.scene = "level1";
+      showScreen("level1-screen");
+    };
+
+    document.getElementById("level1-next").onclick = () => {
+      state.level = 2;
+      state.scene = "level2";
+      state.score += 100;
+      showScreen("level2-screen");
+    };
+
+    document.getElementById("level2-restart").onclick = () => {
+      // BUG-001: 重新开始但 HP 没重置！
+      state.level = 1;
+      state.score = 0;
+      state.scene = "level1";
+      // state.hp = 100;  // ← 这行漏掉了，就是 bug
+      showScreen("level1-screen");
+    };
+
+    document.getElementById("level2-win").onclick = () => {
+      state.score += 200;
+      state.scene = "win";
+      showScreen("win-screen");
+      // BUG-003: 弹 alert，导致后续操作卡住（阻塞式弹窗）
+      // 这是一个真实的 UI 阻塞 bug，自动化测试容易被卡住
+      setTimeout(() => {
+        alert("通关啦！");
+      }, 50);
+    };
+
+    document.getElementById("win-restart").onclick = () => {
+      state.hp = 100;
+      state.score = 0;
+      state.level = 0;
+      showScreen("menu-screen");
+    };
+
+    // === 随机种子（简易实现）===
+    let _seed = 42;
+    function seededRandom() {
+      // xorshift32 简易伪随机
+      _seed ^= _seed << 13;
+      _seed ^= _seed >>> 17;
+      _seed ^= _seed << 5;
+      return ((_seed >>> 0) % 100000) / 100000;
+    }
+
+    // === 事件日志 ===
+    const _events = [];
+    function _logEvent(type, data) {
+      _events.push({
+        step: _logicStep,
+        type,
+        data: data || {},
+        time: Date.now(),
+      });
+    }
+
+    // === 逻辑步计数 ===
+    let _logicStep = 0;
+
+    // === 可用动作（按场景动态）===
+    function getAvailableActions() {
+      // 所有场景都有的基础动作
+      const base = ["click", "wait", "set_param"];
+      return base;
+    }
+
+    // === PlayRanger SDK 标准接口 ===
+    window.__playranger__ = {
+      // ── 观察 ──
+      observe() {
+        const interactables = [];
+        const activeScreen = document.querySelector(".screen.active");
+        if (activeScreen) {
+          activeScreen.querySelectorAll("button").forEach(btn => {
+            const rect = btn.getBoundingClientRect();
+            interactables.push({
+              id: btn.id,
+              type: "button",
+              text: btn.innerText.trim(),
+              visible: rect.width > 0 && rect.height > 0,
+              selector: "#" + btn.id,
+            });
+          });
+        }
+        return {
+          logic_step: _logicStep,
+          scene: state.scene,
+          hp: state.hp,
+          score: state.score,
+          level: state.level,
+          game_over: false,
+          victory: state.scene === "win",
+          available_actions: getAvailableActions(),
+          interactables,
+        };
+      },
+
+      // ── 执行动作 ──
+      execute(action) {
+        _logicStep++;
+        const type = action.type;
+
+        switch (type) {
+          case "click": {
+            const selector = action.target || action.selector;
+            if (!selector) {
+              _logEvent("action_fail", { type, reason: "no selector" });
+              return { ok: false, error: "click 需要 target/selector" };
+            }
+            const el = document.querySelector(selector);
+            if (!el || !el.click) {
+              _logEvent("action_fail", { type, selector, reason: "element not found" });
+              return { ok: false, error: "element not found: " + selector };
+            }
+            el.click();
+            _logEvent("click", { selector, text: el.innerText });
+            return { ok: true };
+          }
+          case "wait": {
+            const ms = action.ms || action.params?.ms || 100;
+            _logEvent("wait", { ms });
+            // wait 是同步的，不阻塞
+            return { ok: true };
+          }
+          case "set_param": {
+            const param = action.param || action.params?.param;
+            const value = action.value ?? action.params?.value;
+            if (param === "hp") {
+              state.hp = parseInt(value, 10);
+              _logEvent("set_param", { param, value });
+              return { ok: true };
+            }
+            if (param === "score") {
+              state.score = parseInt(value, 10);
+              _logEvent("set_param", { param, value });
+              return { ok: true };
+            }
+            return { ok: false, error: "unknown param: " + param };
+          }
+          default:
+            _logEvent("action_unknown", { type });
+            return { ok: false, error: "unknown action type: " + type };
+        }
+      },
+
+      // ── 重置 ──
+      reset() {
+        state.scene = "menu";
+        state.hp = 100;
+        state.score = 0;
+        state.level = 0;
+        _logicStep = 0;
+        _events.length = 0;
+        showScreen("menu-screen");
+        _logEvent("reset", {});
+        return { ok: true };
+      },
+
+      // ── 随机种子 ──
+      setSeed(seed) {
+        _seed = seed | 0 || 42;
+        _logEvent("set_seed", { seed: _seed });
+        return { ok: true, seed: _seed };
+      },
+
+      getSeed() {
+        return _seed;
+      },
+
+      // ── 事件日志 ──
+      getEvents() {
+        return _events.slice();
+      },
+
+      // ── 参数（调参用）──
+      setParam(name, value) {
+        if (name === "hp") { state.hp = parseInt(value, 10); return { ok: true }; }
+        if (name === "score") { state.score = parseInt(value, 10); return { ok: true }; }
+        return { ok: false, error: "unknown param: " + name };
+      },
+
+      getParam(name) {
+        if (name === "hp") return state.hp;
+        if (name === "score") return state.score;
+        return null;
+      },
+
+      // ── SDK 版本信息 ──
+      sdkVersion: "1.0.0",
+      gameName: "PlayRanger Demo Game",
+    };
+  </script>
+</body>
+</html>

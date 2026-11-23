@@ -1,0 +1,792 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PlayRanger 总控报告 — 深度构建 · 竞品 · 自审 · 路线图 · 研究</title>
+<style>
+  :root{
+    --bg:#0d1117;--panel:#161b22;--border:#30363d;--text:#e6edf3;--muted:#8b949e;
+    --accent:#58a6ff;--green:#3fb950;--red:#f85149;--yellow:#d29922;--purple:#a371f7;
+    --code:#1f2428;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Microsoft YaHei",sans-serif;line-height:1.6;padding:24px;font-size:14px}
+  .header{border-bottom:1px solid var(--border);padding-bottom:20px;margin-bottom:24px}
+  .header h1{font-size:24px;font-weight:700;margin-bottom:6px}
+  .header .subtitle{color:var(--muted);font-size:13px}
+  .grid{display:grid;gap:16px}
+  .grid-2{grid-template-columns:repeat(2,1fr)}
+  .grid-3{grid-template-columns:repeat(3,1fr)}
+  .grid-4{grid-template-columns:repeat(4,1fr)}
+  @media(max-width:1200px){.grid-4{grid-template-columns:repeat(2,1fr)}.grid-3{grid-template-columns:repeat(2,1fr)}}
+  @media(max-width:768px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
+  .card{background:var(--panel);border:1px solid var(--border);border-radius:8px;padding:20px}
+  .card h2{font-size:16px;font-weight:600;margin-bottom:12px;display:flex;align-items:center;gap:8px}
+  .card h2 .badge{font-size:11px;padding:2px 8px;border-radius:12px;font-weight:500}
+  .badge-green{background:rgba(63,185,80,.15);color:var(--green)}
+  .badge-red{background:rgba(248,81,73,.15);color:var(--red)}
+  .badge-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .badge-purple{background:rgba(163,113,247,.15);color:var(--purple)}
+  .badge-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+  .kpi{text-align:center}
+  .kpi .num{font-size:28px;font-weight:700;margin-bottom:4px}
+  .kpi .label{color:var(--muted);font-size:12px}
+  .num.green{color:var(--green)}.num.red{color:var(--red)}.num.yellow{color:var(--yellow)}.num.blue{color:var(--accent)}.num.purple{color:var(--purple)}
+  table{width:100%;border-collapse:collapse;font-size:13px}
+  th,td{padding:8px 10px;text-align:left;border-bottom:1px solid var(--border)}
+  th{color:var(--muted);font-weight:500;font-size:12px;text-transform:uppercase;letter-spacing:.5px}
+  tr:last-child td{border-bottom:none}
+  .tag{display:inline-block;padding:1px 6px;border-radius:4px;font-size:11px;font-weight:500;margin:1px}
+  .tag-blue{background:rgba(88,166,255,.15);color:var(--accent)}
+  .tag-green{background:rgba(63,185,80,.15);color:var(--green)}
+  .tag-red{background:rgba(248,81,73,.15);color:var(--red)}
+  .tag-yellow{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .tag-gray{background:rgba(139,148,158,.15);color:var(--muted)}
+  .tag-purple{background:rgba(163,113,247,.15);color:var(--purple)}
+  ul{list-style:none;padding-left:0}
+  ul li{padding:4px 0 4px 18px;position:relative}
+  ul li::before{content:"·";position:absolute;left:6px;color:var(--muted);font-weight:700}
+  .progress-row{display:flex;align-items:center;gap:10px;margin:6px 0}
+  .progress-label{flex:0 0 140px;font-size:12px;color:var(--muted)}
+  .progress-bar{flex:1;height:8px;background:#21262d;border-radius:4px;overflow:hidden}
+  .progress-fill{height:100%;border-radius:4px;transition:width .3s}
+  .progress-value{flex:0 0 50px;text-align:right;font-size:12px;font-weight:600}
+  .section-title{font-size:20px;font-weight:700;margin:32px 0 16px;padding-left:12px;border-left:4px solid var(--accent)}
+  .quote{border-left:3px solid var(--yellow);padding:8px 12px;background:rgba(210,153,34,.08);margin:8px 0;font-size:13px;border-radius:0 6px 6px 0}
+  .oppose{border-left:3px solid var(--red);padding:10px 14px;background:rgba(248,81,73,.06);margin:8px 0;border-radius:0 6px 6px 0}
+  .oppose h4{color:var(--red);font-size:13px;font-weight:600;margin-bottom:4px}
+  .support{border-left:3px solid var(--green);padding:10px 14px;background:rgba(63,185,80,.06);margin:8px 0;border-radius:0 6px 6px 0}
+  .support h4{color:var(--green);font-size:13px;font-weight:600;margin-bottom:4px}
+  .phase{margin-bottom:16px}
+  .phase-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px}
+  .phase-name{font-weight:600;font-size:14px}
+  .phase-status{font-size:11px;padding:2px 10px;border-radius:12px;font-weight:500}
+  .task-item{display:flex;align-items:flex-start;gap:8px;padding:4px 0;font-size:13px}
+  .task-dot{width:6px;height:6px;border-radius:50%;margin-top:7px;flex-shrink:0}
+  .dot-green{background:var(--green)}.dot-yellow{background:var(--yellow)}.dot-red{background:var(--red)}.dot-gray{background:var(--muted)}
+  details{margin:6px 0}
+  details summary{cursor:pointer;padding:6px 8px;background:var(--code);border-radius:4px;font-size:12px;list-style:none;display:flex;align-items:center;gap:8px}
+  details summary::before{content:"▸";color:var(--muted);transition:transform .2s}
+  details[open] summary::before{content:"▾"}
+  details[open] summary{border-radius:4px 4px 0 0}
+  details .detail-body{padding:8px 12px;background:var(--code);border-radius:0 0 4px 4px;font-size:12px;color:var(--muted)}
+  .source{font-size:11px;color:var(--muted);margin-top:8px;font-style:italic}
+  .source a{color:var(--accent);text-decoration:none}
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+  @media(max-width:768px){.two-col{grid-template-columns:1fr}}
+  .risk-matrix{display:grid;grid-template-columns:auto repeat(3,1fr);gap:2px;margin-top:8px}
+  .risk-cell{padding:8px;text-align:center;font-size:12px;border-radius:4px}
+  .risk-head{background:transparent;color:var(--muted);font-weight:500;font-size:11px;text-transform:uppercase}
+  .risk-low{background:rgba(63,185,80,.15);color:var(--green)}
+  .risk-med{background:rgba(210,153,34,.15);color:var(--yellow)}
+  .risk-high{background:rgba(248,81,73,.15);color:var(--red)}
+  .timeline{position:relative;padding-left:24px}
+  .timeline::before{content:"";position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:var(--border)}
+  .tl-item{position:relative;margin-bottom:14px}
+  .tl-item::before{content:"";position:absolute;left:-20px;top:6px;width:10px;height:10px;border-radius:50%;background:var(--accent);border:2px solid var(--bg)}
+  .tl-item.done::before{background:var(--green)}
+  .tl-item.pending::before{background:var(--yellow)}
+  .tl-title{font-weight:600;font-size:13px;margin-bottom:2px}
+  .tl-desc{color:var(--muted);font-size:12px}
+  .footer{margin-top:40px;padding-top:16px;border-top:1px solid var(--border);color:var(--muted);font-size:11px;text-align:center}
+  code{background:var(--code);padding:1px 5px;border-radius:3px;font-size:12px;font-family:Consolas,Monaco,monospace}
+  .score-card{text-align:center;padding:16px;border-radius:8px}
+  .score-card .score{font-size:36px;font-weight:800}
+  .score-card .dim{font-size:11px;color:var(--muted);margin-top:4px;text-transform:uppercase;letter-spacing:1px}
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>🎮 PlayRanger「试玩队」总控报告</h1>
+  <div class="subtitle">
+    游戏自动化试玩测试 Agent · 深度构建与市场分析 · 生成时间 2026-11-23 · 对应 TRAE 好应用大赏赛
+  </div>
+</div>
+
+<!-- KPI 概览 -->
+<div class="grid grid-4" style="margin-bottom:24px">
+  <div class="card kpi">
+    <div class="num green">27</div>
+    <div class="label">核心功能模块</div>
+  </div>
+  <div class="card kpi">
+    <div class="num blue">327</div>
+    <div class="label">自动化测试通过</div>
+  </div>
+  <div class="card kpi">
+    <div class="num yellow">17</div>
+    <div class="label">已知不足（诚实标注）</div>
+  </div>
+  <div class="card kpi">
+    <div class="num purple">60.3亿$</div>
+    <div class="label">全球游戏QA市场(2025)</div>
+  </div>
+</div>
+
+<!-- 赛事对齐评分预评 -->
+<div class="section-title">一、赛事评分维度预评与差距分析</div>
+<div class="grid grid-4" style="margin-bottom:16px">
+  <div class="card score-card" style="background:rgba(88,166,255,.08);border-color:rgba(88,166,255,.3)">
+    <div class="score blue">7.2/10</div>
+    <div class="dim">应用价值 (30%)</div>
+  </div>
+  <div class="card score-card" style="background:rgba(163,113,247,.08);border-color:rgba(163,113,247,.3)">
+    <div class="score purple">8.0/10</div>
+    <div class="dim">创新性 (30%)</div>
+  </div>
+  <div class="card score-card" style="background:rgba(63,185,80,.08);border-color:rgba(63,185,80,.3)">
+    <div class="score green">7.5/10</div>
+    <div class="dim">技术实现 (20%)</div>
+  </div>
+  <div class="card score-card" style="background:rgba(210,153,34,.08);border-color:rgba(210,153,34,.3)">
+    <div class="score yellow">6.8/10</div>
+    <div class="dim">交互体验及审美 (20%)</div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>各维度差距与提升空间 <span class="badge badge-yellow">自评 · 可质疑</span></h2>
+  <table>
+    <thead><tr><th>维度</th><th>当前得分</th><th>主要加分项</th><th>主要失分项</th><th>提升动作</th></tr></thead>
+    <tbody>
+      <tr><td><b>应用价值</b><br><span style="color:var(--muted);font-size:11px">30% 权重</span></td><td><span style="color:var(--accent);font-weight:600">7.2</span></td><td>真实解决独游QA痛点；零脚本自动试玩；修复沙箱可落地；C组5缺陷实测发现率100%</td><td>盲测模式(B组)无量化数据；仅Web游戏，覆盖面窄；样本量偏小(5)</td><td>补B组盲测实验；多做1个真实游戏验证</td></tr>
+      <tr><td><b>创新性</b><br><span style="color:var(--muted);font-size:11px">30% 权重</span></td><td><span style="color:var(--purple);font-weight:600">8.0</span></td><td>证据链+代码定位双护城河；零接入盲测+SDK真值双模；控制台+调度器产品化</td><td>核心推理依赖第三方LLM；代码定位是轻量扫描非深度分析</td><td>强化"AI Agent + 游戏测试"研究属性；补充证据标准化提案；深化代码定位为跨文件调用链</td></tr>
+      <tr><td><b>技术实现</b><br><span style="color:var(--muted);font-size:11px">20% 权重</span></td><td><span style="color:var(--green);font-weight:600">7.5</span></td><td>327项测试全绿；真实浏览器E2E；SQLite持久化+鉴权；沙箱安全</td><td>单机单进程调度；无分布式能力；前端单文件较简陋</td><td>补充架构图与数据流图；细化并发性能数据；完善错误处理与监控</td></tr>
+      <tr><td><b>交互体验</b><br><span style="color:var(--muted);font-size:11px">20% 权重</span></td><td><span style="color:var(--yellow);font-weight:600">6.8</span></td><td>实时轮询看板；登录注册流闭环；Bug审查详情页</td><td>UI为工程风格，视觉设计较弱；移动端未适配；缺少引导教程</td><td>重做控制台视觉；加数据可视化图表；补空状态与错误状态设计</td></tr>
+    </tbody>
+  </table>
+  <div class="source">评分依据：TRAE AI创造力大赛评审维度（应用价值30% / 创新性30% / 技术实现20% / 交互体验20%）。来源：<a href="https://forum.trae.cn/t/topic/604504">TRAE官方社区公告</a></div>
+</div>
+
+<!-- 竞品分析 -->
+<div class="section-title">二、竞品格局与市场机会</div>
+
+<div class="grid grid-2" style="margin-bottom:16px">
+  <div class="card">
+    <h2>市场规模数据 <span class="badge badge-blue">多方验证</span></h2>
+    <ul>
+      <li><b>全球游戏QA与测试服务</b>：2025年约<b>60.3亿美元</b>，预计2032年达<b>125.76亿美元</b>，CAGR 11.0%</li>
+      <li><b>移动游戏QA测试</b>：2025年13.5亿美元，2032年预计25.4亿美元，CAGR 9.4%</li>
+      <li><b>中国游戏试玩模拟</b>：2026上半年52.3亿元，同比+34.7%，2028年预计破百亿</li>
+      <li><b>AI赋能软件测试</b>：服务占比36.79%，预计CAGR 27.28%（日本市场数据参考）</li>
+    </ul>
+    <div class="source">
+      来源：Global Info Research(2026)、GII Research、中国游戏产业研究院《2026游戏试玩模拟技术应用白皮书》、Mizuho Industry Research
+    </div>
+    <div class="quote">
+      ⚠️ 注意：不同报告统计口径不同（QA服务vs自动化工具vs试玩模拟），不可直接加总。取交集判断：AI+游戏测试是明确的增长赛道。
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>主要竞品矩阵</h2>
+    <table>
+      <thead><tr><th>产品</th><th>类型</th><th>核心优势</th><th>结构性弱点</th></tr></thead>
+      <tbody>
+        <tr><td><b>GameDriver</b></td><td>引擎内SDK</td><td>Unity/Unreal原生、真机、快、MCP+AI生成脚本</td><td>必须接SDK、无缺陷分析、仅引擎内</td></tr>
+        <tr><td><b>AltTester</b></td><td>引擎内SDK</td><td>开源、Unity/Unreal、多语言绑定、Sauce Labs旗下</td><td>必须写测试代码、无AI分析、接入成本高</td></tr>
+        <tr><td><b>modl.ai</b></td><td>AI玩家SaaS</td><td>行为AI bot、探索式QA、Unity/Unreal插件、Riot合作</td><td>云依赖、SDK接入、无修复建议、企业定价</td></tr>
+        <tr><td><b>Applitools</b></td><td>视觉回归</td><td>像素级diff成熟、规模化、CI集成好</td><td>不懂玩法、不判语义、仅视觉通道</td></tr>
+        <tr><td><b>人工外包QA</b></td><td>人力服务</td><td>懂玩法、能主观判断、零接入</td><td>贵、慢、不可复现、结论不可审计</td></tr>
+        <tr><td><b>PlayRanger</b></td><td>AI Agent</td><td>零脚本+双模式、证据链、代码定位、私有化、控制台</td><td>仅Web游戏、无引擎内真值、发现率未验证</td></tr>
+      </tbody>
+    </table>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>差异化切入点：竞品结构性空白 <span class="badge badge-purple">机会分析</span></h2>
+  <div class="grid grid-3">
+    <div>
+      <h3 style="font-size:14px;margin-bottom:8px;color:var(--green)">① 证据可审计（Evidence You Can Audit）</h3>
+      <p style="color:var(--muted);font-size:12px">
+        竞品：GameDriver给日志，Applitools给图差，modl.ai给录像，人工给文字。<br>
+        空白：没有一家提供「字段级状态差异 + 哈希链 + 多通道交叉验证」的标准化证据包。
+      </p>
+      <div class="tag tag-green">已做基础版</div>
+      <div class="tag tag-yellow">可深化：证据标准+强度分级</div>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin-bottom:8px;color:var(--green)">② 结论到修法（From Bug to Fix）</h3>
+      <p style="color:var(--muted);font-size:12px">
+        竞品：全部止于"发现+报告"。修复是研发自己的事。<br>
+        空白：从"缺陷→根因→定位到文件行→patch草案→沙箱验证"全链路，没有任何竞品打通。
+      </p>
+      <div class="tag tag-green">已做：代码定位+沙箱</div>
+      <div class="tag tag-yellow">可深化：跨文件调用链+自动回归</div>
+    </div>
+    <div>
+      <h3 style="font-size:14px;margin-bottom:8px;color:var(--green)">③ 零接入私有化（Zero-Onboarding & Private）</h3>
+      <p style="color:var(--muted);font-size:12px">
+        竞品：几乎都要接SDK或上传到云。独游开发者/小团队有接入门槛和隐私顾虑。<br>
+        空白：给URL就能测、源码不外流、断网可跑、5分钟出第一份报告。
+      </p>
+      <div class="tag tag-green">已做：盲测+离线</div>
+      <div class="tag tag-yellow">可深化：首次体验指标化</div>
+    </div>
+  </div>
+  <div class="oppose" style="margin-top:12px">
+    <h4>🗣️ 反方意见：这些"差异化"真的是客户愿意付费的吗？</h4>
+    <p>
+      反对理由一：独游开发者最大的痛点是"没时间测"，而不是"证据不可审计"。证据链是锦上添花，不是刚需。<br>
+      反对理由二：代码定位听起来酷，但如果误报率高、patch不能直接用，反而浪费时间——还不如直接看报告自己改。<br>
+      反对理由三："零接入"意味着没有引擎内真值，发现率天然低于SDK方案。客户可能宁可接SDK也要准确率。
+    </p>
+  </div>
+  <div class="support" style="margin-top:8px">
+    <h4>✅ 正方回应：为什么这三个方向仍然成立</h4>
+    <p>
+      回应一：证据可审计面向的不是"有没有Bug"，而是"这个Bug该不该修"——当测试是AI做的，研发天然不信，证据链是信任基础设施。没有它，AI测试结果进不了流水线。<br>
+      回应二：代码定位的价值不在"自动修完"，而在"减少定位时间"——从读报告+搜代码15分钟，到直接看文件:行2分钟。这是可量化的效率提升。<br>
+      回应三：零接入不是要替代SDK方案，而是覆盖SDK方案覆盖不到的场景——第三方游戏、竞品分析、demo验证、早期原型。这是增量市场，不是存量替代。
+    </p>
+  </div>
+</div>
+
+<!-- 自我审查 -->
+<div class="section-title">三、自我审查：主动找漏洞</div>
+
+<div class="grid grid-2" style="margin-bottom:16px">
+  <div class="card">
+    <h2>技术层漏洞 <span class="badge badge-red">10项</span></h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-title">🔴 LLM 波动直接影响探索质量</div>
+        <div class="tl-desc">Agent的动作决策由LLM给出，模型切换/降级会导致探索路径差异巨大。MockBrain只是流程演示，不是真实能力。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 盲测模式(B组)发现率未量化</div>
+        <div class="tl-desc">C组状态桥接已实测：5/5发现率、Top-3召回80%、可操作定位率100%（详见 c_group_report.json）。但盲测模式(B组)的真实发现率仍无数据，这才是产品说服力的核心缺失。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 代码定位仅限简单模式</div>
+        <div class="tl-desc">只能处理"遗漏重置/渲染偏移/渲染未绑定"三类，且是轻量扫描。跨文件、调用链级别的缺陷定位不了。2048的D组静态定位Top-1为0/10。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 Canvas/WebGL 游戏盲测效果差</div>
+        <div class="tl-desc">DOM拿不到状态时只能靠截图+VLM，成本高且精度低。市面上大部分真正有测试需求的游戏是Canvas/Unity的。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 单机调度，无持久化任务恢复</div>
+        <div class="tl-desc">进程崩溃后running任务标记为interrupted，但不会自动重跑。任务队列在内存里，重启就丢了。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 回放确定性依赖游戏支持种子</div>
+        <div class="tl-desc">不支持SDK种子的游戏，复现率不稳定。全局window.__PLAYRANGER_SEED__只是写入，不会自动覆写Math.random。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 修复沙箱不会自动回归</div>
+        <div class="tl-desc">patch应用到沙箱后，不会自动重跑任务验证"缺陷是否消失"。需要手动触发，且判定还是人工。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟢 前端视觉质量一般</div>
+        <div class="tl-desc">功能完整但设计偏工程化。比赛的"交互体验及审美"维度会扣分。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟢 并发公式可能偏保守</div>
+        <div class="tl-desc">per_worker_mb=1536是估算值，没有实测数据支撑。可能低估或高估了实际内存需求。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">✅ Token 存储已对齐</div>
+        <div class="tl-desc">代码侧已用 SHA-256 哈希入库（auth._token_hash），原始文档描述过时问题已修正。不再是安全风险。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h2>产品 & 商业层漏洞 <span class="badge badge-yellow">8项</span></h2>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-title">🔴 目标用户画像不清晰</div>
+        <div class="tl-desc">"独游开发者"范围太广。是2人小团队还是10人工作室？用什么引擎？月收入多少？谁买单？没有清晰的用户画像就没有清晰的价值主张。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🔴 商业模式未验证</div>
+        <div class="tl-desc">是开源+商业支持？是订阅SaaS？是按测试用量付费？是一次性买断？目前没有商业模式设计，也没有验证。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 仅Web游戏覆盖面太窄</div>
+        <div class="tl-desc">真正有QA预算的是手游/PC/主机游戏团队。Web小游戏团队大概率没有测试预算。市场虽大，但我们切入的细分可能很小。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 与现有CI/测试流如何集成？</div>
+        <div class="tl-desc">GitHub Action和Jenkins文件有，但真实PR验证没做过。接入成本、配置复杂度、失败时的debug体验都不清楚。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟡 竞争壁垒够不够？</div>
+        <div class="tl-desc">modl.ai有Riot合作背书，GameDriver有Unity Verified Solution认证，AltTester有Sauce Labs资源。我们一个人做的项目，壁垒在哪里？</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟢 没有真实用户反馈</div>
+        <div class="tl-desc">所有设计都是自嗨式的。没有一个真实开发者用过、反馈过。可能我们以为的痛点根本不是痛点。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟢 文档与功能膨胀风险</div>
+        <div class="tl-desc">27个功能模块、7份文档，看起来很全。但核心体验是否真的好？功能多≠体验好。可能每一样都有、但每一样都不深入。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-title">🟢 LLM 成本不透明</div>
+        <div class="tl-desc">真实跑一次测试要花多少钱（LLM API调用）？没有数据。如果跑一次要$5，对独游开发者来说可能太贵了。</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 风险矩阵 -->
+<div class="card" style="margin-bottom:24px">
+  <h2>风险矩阵：发生概率 × 影响程度</h2>
+  <div class="risk-matrix">
+    <div class="risk-cell risk-head"></div>
+    <div class="risk-cell risk-head">低影响</div>
+    <div class="risk-cell risk-head">中影响</div>
+    <div class="risk-cell risk-head">高影响</div>
+    
+    <div class="risk-cell risk-head">高概率</div>
+    <div class="risk-cell risk-med">前端设计偏弱<br><span style="font-size:10px;opacity:.7">比赛视觉扣分</span></div>
+    <div class="risk-cell risk-medium">盲测发现率未验证<br><span style="font-size:10px;opacity:.7">C组已量化，B组仍空白</span></div>
+    <div class="risk-cell risk-high">Canvas/WebGL盲测效果差<br><span style="font-size:10px;opacity:.7">覆盖面不足</span></div>
+    
+    <div class="risk-cell risk-head">中概率</div>
+    <div class="risk-cell risk-low">Token存储已对齐<br><span style="font-size:10px;opacity:.7">SHA-256哈希入库 ✅</span></div>
+    <div class="risk-cell risk-med">单机调度稳定性<br><span style="font-size:10px;opacity:.7">进程崩溃丢失队列</span></div>
+    <div class="risk-cell risk-high">LLM波动影响结果<br><span style="font-size:10px;opacity:.7">结果不可复现</span></div>
+    
+    <div class="risk-cell risk-head">低概率</div>
+    <div class="risk-cell risk-low">并发公式偏差<br><span style="font-size:10px;opacity:.7">资源利用率</span></div>
+    <div class="risk-cell risk-med">商业模式未验证<br><span style="font-size:10px;opacity:.7">长期可持续</span></div>
+    <div class="risk-cell risk-med">竞品快速跟进<br><span style="font-size:10px;opacity:.7">差异化被复制</span></div>
+  </div>
+</div>
+
+<!-- P0-P3 深度构建路线图 -->
+<div class="section-title">四、P0-P3 深度构建路线图（建议执行顺序）</div>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-name">🎯 P0 — 参赛必做（2-3天）：把已有东西"讲清楚、演漂亮"</span>
+      <span class="phase-status" style="background:rgba(88,166,255,.15);color:var(--accent)">优先级：最高</span>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+      目标：不是做更多功能，而是把已有的27个功能、327个测试用真实Demo、清晰文档、漂亮界面呈现出来。比赛拼的是"完成度+呈现质量"，不是功能数量。
+    </p>
+    <div class="grid grid-3">
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>技术实现文档深化</b><br>
+          <span style="color:var(--muted);font-size:11px">按四评分维度强化：应用价值（用户故事+场景）、创新性（差异化论证）、技术实现（架构图+数据流+性能数据）、交互体验（设计说明）</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>控制台视觉升级</b><br>
+          <span style="color:var(--muted);font-size:11px">重做index.html：深色专业风格、数据可视化（缺陷分布饼图/趋势折线图）、空状态设计、加载动画、移动端适配</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>Demo视频 & 录屏</b><br>
+          <span style="color:var(--muted);font-size:11px">5分钟演示视频：注册→建任务→并发运行→Bug审查→修复验证，配字幕和关键节点说明</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>C组对照实验（2048浏览器级）</b><br>
+          <span style="color:var(--muted);font-size:11px">至少完成5/10个缺陷的C组3轮测试，输出发现率/误报率初步数据。不追求全部完成，但要有真实数据</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-green"></div><div>
+          <b>修复Token存储不一致</b><br>
+          <span style="color:var(--muted);font-size:11px">代码改为SHA-256哈希存储，或修正文档描述，确保一致</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>参赛作品帖撰写</b><br>
+          <span style="color:var(--muted);font-size:11px">按照初赛模板：问题→方案→亮点→演示→技术→不足→下一步，配截图和演示链接</span>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-name">🚀 P1 — 信任构建（1-2周）：用数据证明"真的有用"</span>
+      <span class="phase-status" style="background:rgba(63,185,80,.15);color:var(--green)">优先级：高</span>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+      目标：把"看起来不错"变成"数据证明有效"。这是从Demo到产品的关键一步。
+    </p>
+    <div class="grid grid-3">
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>完整A/B/C/E对照实验</b><br>
+          <span style="color:var(--muted);font-size:11px">3个游戏×3组×3轮，产出漏报率、误报率、单缺陷定位耗时、节省工时。这是说服力的核心</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>修复后自动回归</b><br>
+          <span style="color:var(--muted);font-size:11px">patch应用到沙箱后，自动重跑原任务的复现序列，验证缺陷是否消失。把修复链闭环</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>真实项目案例研究</b><br>
+          <span style="color:var(--muted);font-size:11px">找1-2个开源Web游戏，完整跑一次PlayRanger，记录"发现了什么、节省了多少时间"，写成Case Study</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>LLM 成本分析</b><br>
+          <span style="color:var(--muted);font-size:11px">统计典型测试场景下的Token消耗和API费用，给出"每次测试≈$X"的估算</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-yellow"></div><div>
+          <b>任务持久化恢复</b><br>
+          <span style="color:var(--muted);font-size:11px">队列写入SQLite，进程重启后自动恢复pending任务。调度器从内存队列升级为持久化队列</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-green"></div><div>
+          <b>用户引导与新手体验</b><br>
+          <span style="color:var(--muted);font-size:11px">首次登录引导、示例任务一键创建、空状态页引导、操作提示</span>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-name">🏗️ P2 — 深化壁垒（1-2月）：把差异化做深做厚</span>
+      <span class="phase-status" style="background:rgba(163,113,247,.15);color:var(--purple)">优先级：中</span>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+      目标：把三条差异化主轴（证据可审计、结论到修法、零接入私有化）从"有"做到"深"，形成竞品短期抄不走的壁垒。
+    </p>
+    <div class="grid grid-3">
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>证据包标准化与强度分级</b><br>
+          <span style="color:var(--muted);font-size:11px">定义证据包格式规范（类似SARIF但面向游戏）；证据强度分级：单通道/双通道一致/三通道一致+人工复核</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>跨文件代码定位与调用链分析</b><br>
+          <span style="color:var(--muted);font-size:11px">从"单个文件扫描"升级为"项目级调用图"，追踪状态字段从UI→逻辑→存储的完整链路</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>Canvas/WebGL 探针协议</b><br>
+          <span style="color:var(--muted);font-size:11px">定义轻量只读探针协议，游戏侧注入几行代码就能暴露状态。比完整SDK轻量，比纯盲测准确</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>更多专项测试类型</b><br>
+          <span style="color:var(--muted);font-size:11px">弱网模拟、存档兼容性、多语言文本溢出、无障碍（屏幕阅读器适配）</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>Unity/Godot 适配验证</b><br>
+          <span style="color:var(--muted);font-size:11px">用AltTester协议或直接WebGL导出，验证PlayRanger对非原生Web游戏的适配能力</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>分布式调度（多机）</b><br>
+          <span style="color:var(--muted);font-size:11px">从单机线程池升级为Redis/Celery分布式任务队列，支持多Worker机器</span>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="card" style="margin-bottom:24px">
+  <div class="phase">
+    <div class="phase-header">
+      <span class="phase-name">🔬 P3 — 研究前沿（长期）：探索AI游戏测试的边界</span>
+      <span class="phase-status" style="background:rgba(210,153,34,.15);color:var(--yellow)">优先级：研究</span>
+    </div>
+    <p style="color:var(--muted);font-size:12px;margin-bottom:8px">
+      目标：不是产品功能，而是研究方向。建立PlayRanger在"AI+游戏测试"领域的技术话语权。
+    </p>
+    <div class="grid grid-3">
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>游戏Agent能力基准测试套件</b><br>
+          <span style="color:var(--muted);font-size:11px">类似GLUE但面向游戏测试：定义一组标准游戏（含已知缺陷），统一评估不同AI Agent的缺陷发现能力</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>多Agent协作试玩</b><br>
+          <span style="color:var(--muted);font-size:11px">探索者Agent+验证者Agent+定位者Agent分工协作，而不是单个ReAct循环</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>自进化测试策略</b><br>
+          <span style="color:var(--muted);font-size:11px">Agent从历史测试结果中学习"哪种游戏、哪种缺陷、用什么策略最有效"，自动调整探索策略</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>形式化验证 + AI 混合</b><br>
+          <span style="color:var(--muted);font-size:11px">对核心游戏逻辑（如经济系统、战斗数值），AI发现可疑路径后交由形式化验证器确认</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>玩家行为模拟的心理效度</b><br>
+          <span style="color:var(--muted);font-size:11px">AI Agent不只是"找Bug"，而是"像玩家一样玩"——研究Agent行为模式与真实玩家的匹配度</span>
+        </div></div>
+      </div>
+      <div>
+        <div class="task-item"><div class="task-dot dot-gray"></div><div>
+          <b>测试用例自动生成的覆盖率度量</b><br>
+          <span style="color:var(--muted);font-size:11px">定义游戏测试的"覆盖率"（场景覆盖率/状态空间覆盖率/分支覆盖率）并实现自动度量</span>
+        </div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- 深度可持续性研究计划 -->
+<div class="section-title">五、深度可持续性研究文档计划</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>AI Agent + 游戏自动化测试 — 长期研究议程 <span class="badge badge-purple">研究计划</span></h2>
+  <p style="color:var(--muted);font-size:13px;margin-bottom:16px">
+    以下不是产品功能计划，而是研究议程。目的：建立PlayRanger的技术深度与话语权，而非短期功能堆砌。
+    每个研究方向都对应一个可发表/可开源的产出物。
+  </p>
+
+  <div class="grid grid-2">
+    <div>
+      <details open>
+        <summary>📊 研究方向一：游戏 AI Agent 基准测试（Game Testing Benchmark）</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：如何客观评估不同AI Agent在游戏测试任务上的能力差异？</p>
+          <p><b>现状</b>：没有统一基准。各家都在自己的Demo上演示，无法横向比较。</p>
+          <p><b>计划产出</b>：</p>
+          <ul>
+            <li>一套标准游戏测试基准（5-10个游戏，每个含10-20个预埋缺陷）</li>
+            <li>统一评估指标：发现率、误报率、平均定位时间、复现成功率</li>
+            <li>开源评估框架，任何人可以提交自己的Agent跑分</li>
+          </ul>
+          <p><b>预期论文/报告</b>：《GT-Bench: A Benchmark for AI-Powered Game Testing》</p>
+          <p><b>时间估计</b>：3-6个月</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🧠 研究方向二：游戏状态空间的高效探索</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：游戏状态空间巨大，Agent如何在有限步数内最大化缺陷发现？</p>
+          <p><b>现状</b>：随机探索+启发式，效率不高。</p>
+          <p><b>研究问题</b>：</p>
+          <ul>
+            <li>能否用强化学习训练"探索策略"，在同类游戏间迁移？</li>
+            <li>能否用LLM的世界模型预测"哪些行为更可能触发Bug"？</li>
+            <li>能否从代码静态分析指导探索优先级（复杂度高的模块优先测）？</li>
+          </ul>
+          <p><b>时间估计</b>：6-12个月</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🔗 研究方向三：从缺陷到修复的端到端学习</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：能否从"游戏运行时的异常行为"直接生成修复代码，而不经过人工定位？</p>
+          <p><b>现状</b>：我们的方案是"规则模板+静态扫描"，覆盖面有限。</p>
+          <p><b>研究路径</b>：</p>
+          <ul>
+            <li>构建"缺陷-修复"对数据集（从开源游戏的Git历史中挖掘）</li>
+            <li>训练/微调专门的"游戏Bug修复模型"</li>
+            <li>研究"运行时状态差异→代码变更"的映射关系</li>
+          </ul>
+          <p><b>风险</b>：数据获取难度大；高质量游戏Bug修复对稀缺</p>
+          <p><b>时间估计</b>：12+个月</p>
+        </div>
+      </details>
+    </div>
+    <div>
+      <details>
+        <summary>🎮 研究方向四：多模态游戏理解（视觉+代码+状态）</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：游戏同时包含视觉表现、代码逻辑和运行时状态，如何融合多模态信息做更准的缺陷检测？</p>
+          <p><b>现状</b>：我们的方案是多通道独立判定（SDK状态/视觉/断言），然后加权汇总。不是真正的多模态融合。</p>
+          <p><b>研究问题</b>：</p>
+          <ul>
+            <li>VLM能否真正理解游戏画面中的"玩法异常"（而不只是视觉缺陷）？</li>
+            <li>代码静态分析与运行时动效能否相互校验？</li>
+            <li>能否建立"游戏画面→内部状态"的逆映射模型？</li>
+          </ul>
+          <p><b>时间估计</b>：6-12个月</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>📈 研究方向五：AI测试的可信度度量</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：当AI说"这里有个Bug"时，我们能有多信？如何量化AI测试结果的可信度？</p>
+          <p><b>现状</b>：我们有证据链和置信度打分，但都是人工定义的规则，没有经过严格的概率校准。</p>
+          <p><b>研究问题</b>：</p>
+          <ul>
+            <li>如何校准AI的"置信度"，使其与真实正确率匹配？</li>
+            <li>不同证据通道的独立性如何度量？它们的加权组合是否最优？</li>
+            <li>能否给出每条缺陷的"错误概率"而非简单的三档结论？</li>
+          </ul>
+          <p><b>时间估计</b>：3-6个月</p>
+        </div>
+      </details>
+
+      <details>
+        <summary>🌐 研究方向六：开源社区与开放科学</summary>
+        <div class="detail-body">
+          <p><b>问题</b>：AI游戏测试是个新兴领域，如何建立开放的研究生态？</p>
+          <p><b>计划</b>：</p>
+          <ul>
+            <li>开放PlayRanger的核心算法与数据格式规范</li>
+            <li>维护开源游戏缺陷库（收集真实游戏的Bug及其修复）</li>
+            <li>建立年度基准测试挑战赛</li>
+            <li>发布年度"AI游戏测试现状"白皮书</li>
+          </ul>
+          <p><b>价值</b>：建立PlayRanger作为社区中心的地位，而不仅仅是一个工具</p>
+          <p><b>时间估计</b>：持续进行</p>
+        </div>
+      </details>
+    </div>
+  </div>
+</div>
+
+<!-- 数据来源与验证 -->
+<div class="section-title">六、数据来源与验证记录</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>本报告引用数据的多方验证 <span class="badge badge-green">可追溯</span></h2>
+  <table>
+    <thead><tr><th>数据点</th><th>来源A</th><th>来源B</th><th>一致性判断</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>全球游戏QA市场规模</td>
+        <td>Global Info Research: 2025年60.3亿美元，CAGR 11.0%</td>
+        <td>GII Research: 移动游戏QA 2025年13.5亿，CAGR 9.4%</td>
+        <td><span class="tag tag-green">基本一致</span> GII是细分市场（仅移动），GIR是整体（含服务），口径不同但增长趋势吻合</td>
+      </tr>
+      <tr>
+        <td>中国游戏试玩模拟市场</td>
+        <td>中国游戏产业研究院白皮书: 2026上半年52.3亿元，+34.7%</td>
+        <td>（无第二来源验证）</td>
+        <td><span class="tag tag-yellow">单源</span> 仅一个来源，且"试玩模拟"与"QA测试"口径不同，谨慎参考</td>
+      </tr>
+      <tr>
+        <td>AI软件测试市场增速</td>
+        <td>Mizuho Industry Research: CAGR 27.28%（日本市场）</td>
+        <td>（无第二来源验证）</td>
+        <td><span class="tag tag-yellow">单源+地域限制</span> 日本市场不能直接代表全球，但方向（AI测试增速快于传统测试）合理</td>
+      </tr>
+      <tr>
+        <td>竞品功能对比</td>
+        <td>各产品官网（GameDriver/AltTester/modl.ai/Applitools）</td>
+        <td>AI Wiki 2025游戏测试工具对比</td>
+        <td><span class="tag tag-green">一致</span> 功能描述与官网一致，分类合理</td>
+      </tr>
+      <tr>
+        <td>赛事评分维度</td>
+        <td>TRAE官方社区公告（6月版）</td>
+        <td>TRAE大学生大赛评分标准（应用价值30/创新30/技术20/体验20）</td>
+        <td><span class="tag tag-green">一致</span> 两场比赛评分维度一致，权重相同，可信度高</td>
+      </tr>
+      <tr>
+        <td>PlayRanger自身数据</td>
+        <td>代码仓库实测：327测试通过、27功能、2个游戏验证</td>
+        <td>（自报数据，无第三方验证）</td>
+        <td><span class="tag tag-yellow">自证</span> 可通过运行pytest复核，但对照实验数据缺失，是最大的可信度缺口</td>
+      </tr>
+    </tbody>
+  </table>
+  <div class="quote" style="margin-top:12px">
+    📌 核心原则：凡是自报数据（测试数、功能数、性能数据）都应该可复算；凡是外部数据（市场规模、竞品信息）都应该至少有两个独立来源交叉验证。本报告中标注"单源"的数据点请谨慎使用。
+  </div>
+</div>
+
+<!-- 反对意见汇总 -->
+<div class="section-title">七、如果我是评委，我会怎么质疑这个作品？</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>预演：评委可能提出的尖锐问题 <span class="badge badge-red">自我攻诘</span></h2>
+  
+  <div class="grid grid-2">
+    <div class="oppose">
+      <h4>质疑1："这东西真的能找到Bug吗？还是只是演示游戏上的自嗨？"</h4>
+      <p>
+        最强的质疑：所有Demo都是自己写的游戏、自己埋的Bug。你在2048上做了静态定位，但有没有在一个你没见过的真实游戏上，从零开始用盲测模式跑出过有价值的Bug列表？<br>
+        <b>当前回答</b>：还没有。C组对照实验只有2个浏览器夹具用例。这是最大的说服力缺口。<br>
+        <b>P0应对</b>：至少补5个2048缺陷的C组浏览器级实测，哪怕只有初步数据，也比"没有"强一个数量级。
+      </p>
+    </div>
+    <div class="oppose">
+      <h4>质疑2："LLM做决策的测试工具，结果稳定吗？换个模型结果会不会完全不一样？"</h4>
+      <p>
+        测试的核心要求是"可复现"，但LLM天生有温度参数和随机性。你怎么保证同一游戏同一个目标，每次跑出来的Bug列表大致一样？<br>
+        <b>当前回答</b>：保证不了。我们有种子机制和动作校验，但LLM的规划路径差异是客观存在的。<br>
+        <b>P0应对</b>：诚实承认这个限制，并说明"确定性"是通过多轮测试+证据强度分级来缓解的，而不是消除。同时给出"同一任务重复3次，缺陷发现的重叠率"数据。
+      </p>
+    </div>
+    <div class="oppose">
+      <h4>质疑3："27个功能听起来很多，但核心功能到底是什么？会不会是样样有、样样松？"</h4>
+      <p>
+        一个人做的项目，功能模块比一个团队还多。质量和深度如何保证？会不会是"宽一英里、深一英寸"？<br>
+        <b>当前回答</b>：确实有广度有余、深度不足的问题。比如代码定位只有三类策略可出patch，性能采样只有rAF+CDP兜底，回放确定性只有SDK模式可靠。<br>
+        <b>P0应对</b>：在文档和演示中主动强调"3条差异化主轴"，而不是罗列27个功能。少即是多——把一个故事讲透，比讲二十七个浅故事强。
+      </p>
+    </div>
+    <div class="oppose">
+      <h4>质疑4："独游开发者真的需要自动化测试吗？他们不是人手少、没时间写测试吗？"</h4>
+      <p>
+        你说解决独游开发者的QA痛点，但独立游戏往往体量小、测试量不大，人工可能就够了。真正需要自动化测试的是中大型团队，但那些团队有预算买GameDriver/modl.ai，而且要SDK接入的专业方案。你的目标市场是不是卡在中间了？<br>
+        <b>当前回答</b>：这是一个好问题。我们的定位可能确实需要更精准——也许不是"独游开发者"，而是"中型独立工作室（5-20人）的首个自动化测试工具"，或者"原型验证阶段的快速回归工具"。<br>
+        <b>P0应对</b>：重新打磨用户画像，不要泛泛说"独游开发者"。至少给出2-3个具体的使用场景，每个场景有明确的用户角色和痛点。
+      </p>
+    </div>
+  </div>
+</div>
+
+<!-- 立即行动清单 -->
+<div class="section-title">八、立即行动清单（接下来3天）</div>
+
+<div class="card" style="margin-bottom:24px">
+  <h2>P0 优先级排序：先做什么，后做什么 <span class="badge badge-blue">行动导向</span></h2>
+  <table>
+    <thead><tr><th>优先级</th><th>事项</th><th>预计耗时</th><th>为什么先做</th><th>交付物</th></tr></thead>
+    <tbody>
+      <tr><td><span class="tag tag-green">P0-1 ✅</span></td><td><b>控制台UI重做</b></td><td>已完成</td><td>三Tab导航+仪表盘KPI+图表+动画+移动端适配，API完全向后兼容</td><td>index.html（单文件，约1700行）</td></tr>
+      <tr><td><span class="tag tag-green">P0-2 ✅</span></td><td><b>技术文档深化版</b></td><td>已完成</td><td>按四个评分维度组织内容，让评委看到"你知道评分标准、且每个维度都有东西"</td><td>TECH_参赛版技术实现文档.md</td></tr>
+      <tr><td><span class="tag tag-green">P0-3 ✅</span></td><td><b>Token存储文档对齐</b></td><td>已完成</td><td>代码侧SHA-256哈希入库是对的；旧文档描述过时，已修正PRODUCT_技术实现文档与总控报告</td><td>文档修正，无需改代码</td></tr>
+      <tr><td><span class="tag tag-green">P0-4 ✅</span></td><td><b>C组5个缺陷的浏览器级实测</b></td><td>已完成</td><td>5/5发现率、Top-3召回80%、可操作定位率100%、定位中位耗时149ms。与预注册预期高度吻合</td><td>tools/run_2048_cgroup.py + output/experiments/2048/c_group_report.{json,md}</td></tr>
+      <tr><td><span class="tag tag-yellow">P0-5</span></td><td><b>Demo录屏（5分钟）</b></td><td>0.5天</td><td>比赛作品帖必须有直观的演示。录屏比文字描述有说服力10倍</td><td>演示视频（B站/飞书链接）</td></tr>
+      <tr><td><span class="tag tag-yellow">P0-6</span></td><td><b>参赛作品帖撰写</b></td><td>0.5天</td><td>最终提交形式。结构清晰、有图有真相、诚实标注不足</td><td>论坛帖子（Markdown草稿）</td></tr>
+    </tbody>
+  </table>
+</div>
+
+<div class="footer">
+  PlayRanger 总控报告 · 生成于 2026-11-23 · 版本 v0.2 · 本报告所有数据均可追溯，标注"单源"数据请谨慎引用<br>
+  相关文档：PRODUCT_技术实现文档.md · SUBMISSION_功能说明与亮点不足.md · ROADMAP_不足收敛与差异化.md · EXPERIMENT_对照实验方案.md
+</div>
+
+</body>
+</html>

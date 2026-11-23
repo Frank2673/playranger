@@ -1,0 +1,72 @@
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+
+# 虚拟环境
+.venv/
+venv/
+env/
+
+# 环境变量 & 敏感凭据
+.env
+.env.*
+!.env.example
+.npmrc
+*.pem
+*.key
+*.secret
+credentials.json
+secrets.json
+api_keys.json
+
+# 本地配置
+local_config.py
+config.local.py
+
+# 测试输出
+bugs/
+results/
+output/
+*.png
+test_*.png
+*.db
+*.db-wal
+*.db-shm
+
+# 本地浏览器二进制（不随仓库分发）
+.playwright-browsers/
+.playwright/
+
+# 覆盖率 / 缓存
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store
+
+# Playwright
+test-results/
+.playwright/
