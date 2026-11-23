@@ -109,7 +109,7 @@ class WindowsAdapter(NativeAdapterBase):
 
         hwnd = self._find_window()
         if hwnd is None:
-            candidates = [t for _, t in _enum_windows()][:15]
+            candidates = [t for _, t in _enum_windows()][:5]
             info["reason"] = (
                 "未找到目标窗口。请传 title= 或设置 PLAYRANGER_WINDOW_TITLE。"
                 f" 当前可见窗口: {candidates}"
