@@ -14,6 +14,9 @@ jobs:
   test:
     name: ${{ matrix.os }} / py${{ matrix.python }}
     runs-on: ${{ matrix.os }}
+    env:
+      PYTHONIOENCODING: utf-8
+      PYTHONUTF8: "1"
     strategy:
       fail-fast: false
       matrix:
@@ -42,7 +45,7 @@ jobs:
         run: pytest tests/test_adapters.py -v
 
       - name: Import smoke (package works without browser)
-        run: python -c "import playranger; from playranger.core.engines.adapters import probe_all; print(probe_all()['web'])"
+        run: python -c "import playranger; from playranger.core.engines.adapters import probe_all; print('web_available=', probe_all()['web']['available'], 'version=', playranger.__version__)"
 
       - name: Doctor (JSON)
         run: playranger doctor --json > doctor.json
