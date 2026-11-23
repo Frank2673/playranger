@@ -103,7 +103,13 @@ def run_native_smoke(
                         x = (rect[0] + rect[2]) // 2
                         y = (rect[1] + rect[3]) // 2
                     else:
-                        x = y = None
+                        # Android/iOS 没有 client_rect，退回设备屏幕中心
+                        screen = caps.get("screen") or {}
+                        if screen.get("width") and screen.get("height"):
+                            x = int(screen["width"]) // 2
+                            y = int(screen["height"]) // 2
+                        else:
+                            x = y = None
                 if x is not None and y is not None:
                     action_result = adapter.execute("tap", params={"x": x, "y": y})
                     trace.write(json.dumps(
