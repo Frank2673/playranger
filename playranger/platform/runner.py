@@ -249,16 +249,35 @@ def run_task(task: dict, hooks: TaskHooks | None = None) -> dict:
         recorder = BugRecorder(output_dir=str(bug_dir))
         memory = _LockedMemory(AgentMemory())
 
-        engine = PlayEngine(
-            url=game_url,
-            headless=_headless(),
-            ci_mode=True,
-            retry=1,
-            viewport=(1280, 720),
-            perf=True,
-            seed=int(seed) if seed is not None else None,
-        )
-        engine.start()
+        # SDK 可选：Unity/Tuanjie WebGL 等引擎页面无法注入 window.__playranger__，
+        # 先按 SDK 模式启动；失败则自动降级为「无 SDK · 原生键鼠 + 视觉」模式。
+        _env = os.environ.get("PLAYRANGER_SDK_MODE", "").strip().lower()
+        _want_sdk = _env not in ("0", "false", "off", "no")
+
+        def _build_engine(use_sdk: bool) -> PlayEngine:
+            return PlayEngine(
+                url=game_url,
+                headless=_headless(),
+                ci_mode=True,
+                retry=1,
+                viewport=(1280, 720),
+                perf=True,
+                seed=int(seed) if seed is not None else None,
+                sdk_mode=use_sdk,
+            )
+
+        engine = _build_engine(_want_sdk)
+        try:
+            engine.start()
+        except RuntimeError as _sdk_err:
+            if not _want_sdk:
+                raise
+            hooks.on_log(
+                "warn",
+                f"页面未注入 SDK，自动降级为无 SDK 模式（原生键鼠 + 视觉）：{_sdk_err}",
+            )
+            engine = _build_engine(False)
+            engine.start()
         if seed is not None:
             try:
                 engine.sdk_set_seed(int(seed))
