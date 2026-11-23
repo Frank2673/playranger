@@ -79,12 +79,20 @@ class IOSAdapter(NativeAdapterBase):
         info["host_platform"] = sys.platform
         info["endpoint"] = self.endpoint
 
-        if sys.platform != "darwin":
+        # WDA 是 HTTP 服务：客户端可以不在 Mac 上。
+        # 只有「本机默认端点」才强制要求 macOS；显式远端端点允许跨平台连接。
+        is_local_endpoint = self.endpoint in (
+            DEFAULT_WDA_ENDPOINT,
+            "http://localhost:8100",
+        )
+        if sys.platform != "darwin" and is_local_endpoint:
             info["reason"] = (
-                f"iOS 适配器需要 macOS 宿主运行 WebDriverAgent（当前 {sys.platform}）。"
-                "若 WDA 已运行在另一台 Mac，可显式传 endpoint= 指向它并忽略此提示。"
+                f"iOS 本机测试需要 macOS 宿主运行 WebDriverAgent（当前 {sys.platform}）。"
+                "若 WDA 已运行在另一台 Mac，可显式传 endpoint='http://<mac-ip>:8100' 远程连接。"
             )
             return info
+        if sys.platform != "darwin":
+            info["note"] = "远程 WDA 模式：客户端非 macOS，连接远端 Mac 上的 WebDriverAgent"
 
         try:
             data = self._request("GET", "/status")
